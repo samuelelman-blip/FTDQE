@@ -1,3 +1,4 @@
+import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Analysis.SpecialFunctions.Exponential
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 
@@ -5,7 +6,7 @@ import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 # Operator Duhamel identity
 
 This file proves the Duhamel identity for exponentials in an arbitrary real
-Banach algebra.  Taking the Banach algebra to be the algebra of bounded linear
+Banach algebra. Taking the Banach algebra to be the algebra of bounded linear
 endomorphisms gives the operator identity used in Lemma 2.
 -/
 
@@ -33,8 +34,8 @@ theorem duhamel_exp_add
       HasDerivAt (fun r : ℝ => exp ((t - r) • L))
         (-(exp ((t - s) • L) * L)) s := by
     have hinner : HasDerivAt (fun r : ℝ => t - r) (-1) s := by
-      convert (hasDerivAt_const (x := s) t).sub (hasDerivAt_id s) using 1 <;> ring
-    have h := (hasDerivAt_exp_smul_const L (t - s)).comp s hinner
+      simpa using (hasDerivAt_const (x := s) t).sub (hasDerivAt_id s)
+    have h := (hasDerivAt_exp_smul_const L (t - s)).scomp s hinner
     convert h using 1 <;> simp
   have hright (s : ℝ) :
       HasDerivAt (fun r : ℝ => exp (r • (L + E)))
@@ -44,9 +45,17 @@ theorem duhamel_exp_add
     dsimp [F, G]
     have h := (hleft s).mul (hright s)
     convert h using 1 <;> noncomm_ring
+  have hleftcont : Continuous (fun s : ℝ => exp ((t - s) • L)) := by
+    rw [continuous_iff_continuousAt]
+    intro s
+    exact (hleft s).continuousAt
+  have hrightcont : Continuous (fun s : ℝ => exp (s • (L + E))) := by
+    rw [continuous_iff_continuousAt]
+    intro s
+    exact (hright s).continuousAt
   have hGcont : Continuous G := by
     dsimp [G]
-    fun_prop
+    exact (hleftcont.mul continuous_const).mul hrightcont
   have hFTC : (∫ s in (0 : ℝ)..t, G s) = F t - F 0 :=
     integral_eq_sub_of_hasDerivAt (fun s _ => hFderiv s)
       (hGcont.intervalIntegrable _ _)
