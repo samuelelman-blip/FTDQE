@@ -44,9 +44,12 @@ theorem integral_gronwall
     have hux : 0 ≤ u x := hu_nonneg x hx'
     have hle : u x ≤ F x := by simpa [F] using hineq x hx'
     have hFx : 0 ≤ F x := hux.trans hle
-    rw [add_zero, Real.norm_eq_abs, abs_of_nonneg (mul_nonneg hB hux),
-      abs_of_nonneg hFx]
-    exact mul_le_mul_of_nonneg_left hle hB
+    calc
+      ‖B * u x‖ = B * u x := by
+        rw [Real.norm_eq_abs, abs_of_nonneg (mul_nonneg hB hux)]
+      _ ≤ B * F x := mul_le_mul_of_nonneg_left hle hB
+      _ = B * ‖F x‖ + 0 := by
+        rw [add_zero, Real.norm_eq_abs, abs_of_nonneg hFx]
   have hG := norm_le_gronwallBound_of_norm_deriv_right_le
     hFcont.continuousOn
     (fun x hx => (hFderiv x).hasDerivWithinAt)
