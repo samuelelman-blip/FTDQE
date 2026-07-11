@@ -26,31 +26,31 @@ theorem duhamel_exp_add
       exp (t • L) +
         ∫ s in (0 : ℝ)..t,
           exp ((t - s) • L) * E * exp (s • (L + E)) := by
-  let F : ℝ → A := fun s =>
-    exp ((t - s) • L) * exp (s • (L + E))
-  let G : ℝ → A := fun s =>
-    exp ((t - s) • L) * E * exp (s • (L + E))
+  let q : ℝ → ℝ := (fun _ : ℝ => t) - id
+  let left : ℝ → A := (fun u : ℝ => exp (u • L)) ∘ q
+  let right : ℝ → A := fun s => exp (s • (L + E))
+  let F : ℝ → A := fun s => left s * right s
+  let G : ℝ → A := fun s => left s * E * right s
+  have hinner (s : ℝ) : HasDerivAt q (-1) s := by
+    dsimp [q]
+    simpa using (hasDerivAt_const (x := s) t).sub (hasDerivAt_id s)
   have hleft (s : ℝ) :
-      HasDerivAt (fun r : ℝ => exp ((t - r) • L))
-        (-(exp ((t - s) • L) * L)) s := by
-    have hinner0 := (hasDerivAt_const (x := s) t).sub (hasDerivAt_id s)
-    have hinner : HasDerivAt (fun r : ℝ => t - r) (-1) s := by
-      convert hinner0 using 1 <;> simp [Pi.sub_apply]
-    have h := (hasDerivAt_exp_smul_const L (t - s)).scomp s hinner
-    simpa only [Function.comp_apply, neg_smul, one_smul] using h
+      HasDerivAt left (-(exp (q s • L) * L)) s := by
+    have h := (hasDerivAt_exp_smul_const L (q s)).scomp s (hinner s)
+    simpa only [left, Function.comp_apply, neg_smul, one_smul] using h
   have hright (s : ℝ) :
-      HasDerivAt (fun r : ℝ => exp (r • (L + E)))
-        ((L + E) * exp (s • (L + E))) s :=
-    hasDerivAt_exp_smul_const' (L + E) s
+      HasDerivAt right ((L + E) * exp (s • (L + E))) s := by
+    simpa only [right] using hasDerivAt_exp_smul_const' (L + E) s
   have hFderiv (s : ℝ) : HasDerivAt F (G s) s := by
     dsimp [F, G]
     have h := (hleft s).mul (hright s)
+    dsimp [left, right] at h ⊢
     convert h using 1 <;> noncomm_ring
-  have hleftcont : Continuous (fun s : ℝ => exp ((t - s) • L)) := by
+  have hleftcont : Continuous left := by
     rw [continuous_iff_continuousAt]
     intro s
     exact (hleft s).continuousAt
-  have hrightcont : Continuous (fun s : ℝ => exp (s • (L + E))) := by
+  have hrightcont : Continuous right := by
     rw [continuous_iff_continuousAt]
     intro s
     exact (hright s).continuousAt
@@ -61,11 +61,11 @@ theorem duhamel_exp_add
     integral_eq_sub_of_hasDerivAt (fun s _ => hFderiv s)
       (hGcont.intervalIntegrable _ _)
   calc
-    exp (t • (L + E)) = F t := by simp [F]
+    exp (t • (L + E)) = F t := by simp [F, left, right, q]
     _ = F 0 + ∫ s in (0 : ℝ)..t, G s := by rw [hFTC]; abel
     _ = exp (t • L) +
         ∫ s in (0 : ℝ)..t,
           exp ((t - s) • L) * E * exp (s • (L + E)) := by
-      simp [F, G]
+      simp [F, G, left, right, q]
 
 end FTDQE
