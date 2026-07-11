@@ -30,8 +30,7 @@ theorem integral_gronwall
   have hFderiv : ∀ x : ℝ, HasDerivAt F (B * u x) x := by
     intro x
     dsimp [F]
-    convert ((hu.integral_hasStrictDerivAt 0 x).hasDerivAt.const_mul B).const_add A using 1 <;>
-      ring
+    exact ((hu.integral_hasStrictDerivAt 0 x).hasDerivAt.const_mul B).const_add A
   have hFcont : Continuous F := by
     rw [continuous_iff_continuousAt]
     intro x
