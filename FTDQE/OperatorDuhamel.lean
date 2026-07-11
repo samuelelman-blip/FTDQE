@@ -45,7 +45,10 @@ theorem duhamel_exp_add
     dsimp [F, G]
     have h := (hleft s).mul (hright s)
     dsimp [left, right] at h ⊢
-    convert h using 1 <;> noncomm_ring
+    convert h using 1
+    · ext r
+      rfl
+    · noncomm_ring
   have hleftcont : Continuous left := by
     rw [continuous_iff_continuousAt]
     intro s
