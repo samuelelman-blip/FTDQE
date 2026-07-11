@@ -33,10 +33,11 @@ theorem duhamel_exp_add
   have hleft (s : ℝ) :
       HasDerivAt (fun r : ℝ => exp ((t - r) • L))
         (-(exp ((t - s) • L) * L)) s := by
+    have hinner0 := (hasDerivAt_const (x := s) t).sub (hasDerivAt_id s)
     have hinner : HasDerivAt (fun r : ℝ => t - r) (-1) s := by
-      simpa using (hasDerivAt_const (x := s) t).sub (hasDerivAt_id s)
+      convert hinner0 using 1 <;> simp [Pi.sub_apply]
     have h := (hasDerivAt_exp_smul_const L (t - s)).scomp s hinner
-    convert h using 1 <;> simp
+    simpa only [Function.comp_apply, neg_smul, one_smul] using h
   have hright (s : ℝ) :
       HasDerivAt (fun r : ℝ => exp (r • (L + E)))
         ((L + E) * exp (s • (L + E))) s :=
