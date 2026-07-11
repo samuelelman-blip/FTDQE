@@ -8,17 +8,21 @@ neighbourhood-filtered Lindbladian cooling.
 - Lean 4.31.0
 - Mathlib 4.31.0
 
-## Initial formalisation layer
+## Machine-checked modules
 
-- The grid-valued global-refresh recursion from Lemma 5 is copied from the
-  supplied core-Lean file that was already machine-checked with Lean 4.31.0.
-- A real-valued version of the same recursion is included for Mathlib CI.
-- The algebraic core of the energy certificate from Lemma 4(b) is included.
-- A corrected noisy-estimate threshold is included that both certifies the
-  target overlap and is guaranteed to trigger after sufficient convergence.
+- `FTDQE.RefreshRecursion`: the grid-valued and real-valued global-refresh
+  recursions underlying Lemma 5 and Eq. (31).
+- `FTDQE.EnergyCertificate`: the scalar algebraic core of Lemma 4(b), including
+  the corrected noisy-estimate threshold that both certifies the target overlap
+  and is guaranteed to trigger after sufficient convergence.
+- `FTDQE.IntegralGronwall`: a continuous integral form of Grönwall's inequality.
+- `FTDQE.PerturbedRelaxation`: the scalar Duhamel--Grönwall estimate of Lemma 2,
+  from the unweighted convolution inequality in Eq. (23) to the exponential
+  relaxation bound in Eq. (22).
 
-The Mathlib-dependent files must pass the repository CI before they are marked
-as machine-checked.
+The operator-semigroup layer that derives Eq. (23) from Duhamel's formula for
+finite-dimensional Lindbladian generators remains to be instantiated with
+trace norms, Hermiticity and trace preservation.
 
 ## Build
 
@@ -27,4 +31,5 @@ lake update
 lake build
 ```
 
-See `docs/formalisation-plan.md` for the planned theorem dependency graph.
+See `docs/formalisation-plan.md` for the theorem dependency graph and current
+status.
