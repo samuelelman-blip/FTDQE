@@ -101,6 +101,6 @@ theorem contraction_bound_real_div (d : ℕ → ℝ) (c : ℝ)
       _ ≤ d 0 + (2 : ℝ) ^ k * c := by nlinarith
       _ = (d 0 / (2 : ℝ) ^ k + c) * (2 : ℝ) ^ k := by
         field_simp [ne_of_gt hp]
-  exact (mul_le_mul_iff_right₀ hp).mp hmul
+  exact (mul_le_mul_iff_right₀ hp).mp (by simpa [mul_comm] using hmul)
 
 end FTDQE
