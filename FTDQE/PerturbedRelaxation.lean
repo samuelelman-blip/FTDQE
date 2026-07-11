@@ -92,7 +92,7 @@ theorem perturbed_relaxation_of_duhamel
         ∫ s in (0 : ℝ)..t, Real.exp (rate * s) * h s := by
     rw [← intervalIntegral.integral_const_mul]
     apply intervalIntegral.integral_congr
-    intro s
+    intro s hs
     calc
       Real.exp (rate * t) * (Real.exp (-rate * (t - s)) * h s) =
           (Real.exp (rate * t) * Real.exp (-rate * (t - s))) * h s := by ring
