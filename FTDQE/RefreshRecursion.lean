@@ -92,13 +92,16 @@ theorem contraction_bound_real_div (d : ℕ → ℝ) (c : ℝ)
     d k ≤ d 0 / (2 : ℝ) ^ k + c := by
   have h := contraction_bound_real d c hrec k
   have hp : 0 < (2 : ℝ) ^ k := pow_pos (by norm_num) k
-  apply (le_div_iff₀ hp).2
-  calc
-    d k * (2 : ℝ) ^ k = (2 : ℝ) ^ k * d k := by ring
-    _ ≤ d 0 + ((2 : ℝ) ^ k - 1) * c := h
-    _ ≤ d 0 + (2 : ℝ) ^ k * c := by nlinarith
-    _ = (d 0 / (2 : ℝ) ^ k + c) * (2 : ℝ) ^ k := by
-      field_simp [ne_of_gt hp]
-      ring
+  have hmul :
+      d k * (2 : ℝ) ^ k ≤
+        (d 0 / (2 : ℝ) ^ k + c) * (2 : ℝ) ^ k := by
+    calc
+      d k * (2 : ℝ) ^ k = (2 : ℝ) ^ k * d k := by ring
+      _ ≤ d 0 + ((2 : ℝ) ^ k - 1) * c := h
+      _ ≤ d 0 + (2 : ℝ) ^ k * c := by nlinarith
+      _ = (d 0 / (2 : ℝ) ^ k + c) * (2 : ℝ) ^ k := by
+        field_simp [ne_of_gt hp]
+        ring
+  exact (mul_le_mul_right hp).mp hmul
 
 end FTDQE
