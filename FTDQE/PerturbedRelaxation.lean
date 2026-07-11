@@ -51,11 +51,15 @@ theorem perturbed_relaxation_of_weighted_duhamel
   have hdiv : h t ≤
       ((κ * xnorm) * Real.exp ((κ * η) * t)) / Real.exp (rate * t) := by
     apply (le_div_iff₀ hexp).2
-    simpa [u] using hu_bound
+    simpa [u, mul_comm] using hu_bound
   calc
     h t ≤ ((κ * xnorm) * Real.exp ((κ * η) * t)) / Real.exp (rate * t) := hdiv
+    _ = κ * xnorm * Real.exp ((κ * η) * t + -(rate * t)) := by
+      rw [div_eq_mul_inv, ← Real.exp_neg, Real.exp_add]
+      ring
     _ = κ * Real.exp (-(rate - κ * η) * t) * xnorm := by
-      rw [div_eq_mul_inv, ← Real.exp_neg, ← Real.exp_add]
-      congr 1 <;> ring
+      have harg : (κ * η) * t + -(rate * t) = -(rate - κ * η) * t := by ring
+      rw [harg]
+      ring
 
 end FTDQE
