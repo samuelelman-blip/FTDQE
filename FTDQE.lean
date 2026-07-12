@@ -16,3 +16,4 @@ import FTDQE.GroundStateOverlap
 import FTDQE.DissipatorLipschitz
 import FTDQE.GevreyTimeLocalisation
 import FTDQE.LiebRobinsonTruncation
+import FTDQE.LocalityToOverlap
