@@ -19,11 +19,11 @@ corresponding improper integrals, are separate analytic developments.
 namespace FTDQE
 
 /-- The stretched-exponential profile occurring in Lemma 1. -/
-def stretchedExponential (s c x : ℝ) : ℝ :=
+noncomputable def stretchedExponential (s c x : ℝ) : ℝ :=
   Real.exp (-c * x ^ (1 / s))
 
 /-- The pointwise prefactor after optimising the integration-by-parts order. -/
-def gevreyPointwiseConstant (L C₁ q : ℝ) : ℝ :=
+noncomputable def gevreyPointwiseConstant (L C₁ q : ℝ) : ℝ :=
   L * C₁ * q / (2 * Real.pi)
 
 /--
@@ -108,7 +108,7 @@ theorem gevrey_pointwise_of_certificates
   · exact hshort t (lt_of_not_ge ht)
 
 /-- The tail profile in Eq. (9), with the exponent constant halved. -/
-def gevreyTailProfile (s c Δ T : ℝ) : ℝ :=
+noncomputable def gevreyTailProfile (s c Δ T : ℝ) : ℝ :=
   stretchedExponential s (c / 2) (Δ * T)
 
 /--
