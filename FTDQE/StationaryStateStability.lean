@@ -165,4 +165,56 @@ theorem flow_stationary_unique_of_perturbed_relaxation
     nlinarith [norm_nonneg (σ₁ - σ₂)]
   exact sub_eq_zero.mp (norm_eq_zero.mp hnormzero)
 
+/--
+Lemma 3 in composed certificate form.  Compact approximate stationary states
+supply existence, the ideal resolvent supplies the unconditional stability
+bound, and positive perturbed decay supplies uniqueness.
+-/
+theorem stationary_state_existence_stability_and_uniqueness
+    {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
+    (L E : X →L[ℝ] X)
+    (flow : ℝ → X →L[ℝ] X)
+    (stateSpace : Set X) (P : X → Prop)
+    (κ rate η : ℝ)
+    (C : ResolventCertificate L P κ rate)
+    (σ : X)
+    (hσ : IsStationary L σ)
+    (hκ : 0 < κ)
+    (hcompact : IsCompact stateSpace)
+    (approximants : ℕ → X)
+    (hmem : ∀ n : ℕ, approximants n ∈ stateSpace)
+    (hresidual : Tendsto
+      (fun n : ℕ => (L + E) (approximants n)) atTop (𝓝 0))
+    (hPdiff : ∀ x ∈ stateSpace, P (x - σ))
+    (hPsub : ∀ x ∈ stateSpace, ∀ y ∈ stateSpace, P (x - y))
+    (hPerror : ∀ x ∈ stateSpace, P (E x))
+    (herror : ∀ x ∈ stateSpace, ‖E x‖ ≤ η * ‖x‖)
+    (hnorm : ∀ x ∈ stateSpace, ‖x‖ = 1)
+    (hgeneratorFlow : ∀ x ∈ stateSpace,
+      IsStationary (L + E) x → IsFlowStationary flow x)
+    (hrelax : ∀ t : ℝ, 0 ≤ t → ∀ y : X, P y →
+      ‖flow t y‖ ≤
+        κ * Real.exp (-(rate - κ * η) * t) * ‖y‖) :
+    ∃ σ' ∈ stateSpace,
+      IsStationary (L + E) σ' ∧
+      ‖σ' - σ‖ ≤ (κ / rate) * ‖E σ'‖ ∧
+      ‖σ' - σ‖ ≤ κ * η / rate ∧
+      (0 < rate - κ * η →
+        ∀ τ ∈ stateSpace, IsStationary (L + E) τ → τ = σ') := by
+  rcases exists_stationary_of_compact_approximants
+      (L + E) stateSpace hcompact approximants hmem hresidual with
+    ⟨σ', hσ'mem, hσ'stationary⟩
+  have hstable := stationary_state_stability_of_resolvent
+    L E P κ rate η C σ σ' hσ hσ'stationary
+    (hPdiff σ' hσ'mem) (hPerror σ' hσ'mem)
+    (herror σ' hσ'mem) (hnorm σ' hσ'mem) hκ.le
+  refine ⟨σ', hσ'mem, hσ'stationary, hstable.1, hstable.2, ?_⟩
+  intro hdecay τ hτmem hτstationary
+  have hunique := flow_stationary_unique_of_perturbed_relaxation
+    flow P κ rate η hκ hdecay hrelax σ' τ
+    (hgeneratorFlow σ' hσ'mem hσ'stationary)
+    (hgeneratorFlow τ hτmem hτstationary)
+    (hPsub σ' hσ'mem τ hτmem)
+  exact hunique.symm
+
 end FTDQE
