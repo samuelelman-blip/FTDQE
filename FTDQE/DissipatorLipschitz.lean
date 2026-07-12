@@ -57,14 +57,15 @@ theorem dissipator_lipschitz_from_holder
     (hanti : antiError ≤ gramError * stateNorm)
     (htotal : totalError ≤ sandwichError + antiError) :
     totalError ≤ 4 * jumpError * stateNorm := by
+  have hgramState :
+      gramError * stateNorm ≤ (2 * jumpError) * stateNorm :=
+    mul_le_mul_of_nonneg_right hgram hstate
   calc
     totalError ≤ sandwichError + antiError := htotal
-    _ ≤ sandwichError + gramError * stateNorm := add_le_add_left hanti sandwichError
     _ ≤ 2 * jumpError * stateNorm + gramError * stateNorm :=
-      add_le_add_right hsandwich (gramError * stateNorm)
-    _ ≤ 2 * jumpError * stateNorm + (2 * jumpError) * stateNorm := by
-      exact add_le_add_left (mul_le_mul_of_nonneg_right hgram hstate)
-        (2 * jumpError * stateNorm)
+      add_le_add hsandwich hanti
+    _ ≤ 2 * jumpError * stateNorm + (2 * jumpError) * stateNorm :=
+      add_le_add_left hgramState (2 * jumpError * stateNorm)
     _ = 4 * jumpError * stateNorm := by ring
 
 /-- Unit-trace-norm form of the pointwise dissipator estimate. -/
