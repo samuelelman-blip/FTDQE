@@ -30,25 +30,27 @@ def gklsApply {ι : Type*} [Fintype ι]
     (H : QMatrix d) (J : ι → QMatrix d) (X : QMatrix d) : QMatrix d :=
   hamiltonianPart H X + ∑ a, lindbladDissipator (J a) X
 
- theorem hamiltonianPart_isHermitian
+theorem hamiltonianPart_isHermitian
     {H X : QMatrix d} (hH : H.IsHermitian) (hX : X.IsHermitian) :
     (hamiltonianPart H X).IsHermitian := by
-  rw [Matrix.IsHermitian, hamiltonianPart]
-  simp [hH.eq, hX.eq, Matrix.conjTranspose_mul]
-  noncomm_ring
+  have hcomm : (H * X - X * H)ᴴ = -(H * X - X * H) := by
+    simp [hH.eq, hX.eq, Matrix.conjTranspose_mul]
+    noncomm_ring
+  rw [Matrix.IsHermitian, hamiltonianPart, Matrix.conjTranspose_smul, hcomm]
+  module
 
- theorem trace_hamiltonianPart (H X : QMatrix d) :
+theorem trace_hamiltonianPart (H X : QMatrix d) :
     Matrix.trace (hamiltonianPart H X) = 0 := by
   simp [hamiltonianPart, Matrix.trace_mul_comm H X]
 
- theorem lindbladDissipator_isHermitian
+theorem lindbladDissipator_isHermitian
     (A : QMatrix d) {X : QMatrix d} (hX : X.IsHermitian) :
     (lindbladDissipator A X).IsHermitian := by
   rw [Matrix.IsHermitian, lindbladDissipator]
   simp [hX.eq, Matrix.conjTranspose_mul]
   noncomm_ring
 
- theorem trace_lindbladDissipator (A X : QMatrix d) :
+theorem trace_lindbladDissipator (A X : QMatrix d) :
     Matrix.trace (lindbladDissipator A X) = 0 := by
   rw [lindbladDissipator, Matrix.trace_sub, Matrix.trace_smul, Matrix.trace_add]
   have hcycle : Matrix.trace (A * X * Aᴴ) = Matrix.trace ((Aᴴ * A) * X) := by
@@ -58,15 +60,19 @@ def gklsApply {ι : Type*} [Fintype ι]
   rw [hcycle, hcomm]
   ring
 
- theorem gklsApply_isHermitian {ι : Type*} [Fintype ι]
+theorem gklsApply_isHermitian {ι : Type*} [Fintype ι]
     {H : QMatrix d} (J : ι → QMatrix d) {X : QMatrix d}
     (hH : H.IsHermitian) (hX : X.IsHermitian) :
     (gklsApply H J X).IsHermitian := by
-  rw [gklsApply]
-  exact (hamiltonianPart_isHermitian hH hX).add
-    (Matrix.isHermitian_sum fun a _ => lindbladDissipator_isHermitian (J a) hX)
+  rw [Matrix.IsHermitian, gklsApply, Matrix.conjTranspose_add]
+  rw [(hamiltonianPart_isHermitian hH hX).eq]
+  congr 1
+  simp_rw [Matrix.conjTranspose_sum]
+  apply Finset.sum_congr rfl
+  intro a _
+  exact (lindbladDissipator_isHermitian (J a) hX).eq
 
- theorem trace_gklsApply {ι : Type*} [Fintype ι]
+theorem trace_gklsApply {ι : Type*} [Fintype ι]
     (H : QMatrix d) (J : ι → QMatrix d) (X : QMatrix d) :
     Matrix.trace (gklsApply H J X) = 0 := by
   simp [gklsApply, trace_hamiltonianPart, trace_lindbladDissipator]
