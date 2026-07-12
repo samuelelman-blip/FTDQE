@@ -35,9 +35,8 @@ theorem hamiltonianPart_isHermitian
     (hamiltonianPart H X).IsHermitian := by
   have hcomm : (H * X - X * H)ᴴ = -(H * X - X * H) := by
     simp [hH.eq, hX.eq, Matrix.conjTranspose_mul]
-    noncomm_ring
   rw [Matrix.IsHermitian, hamiltonianPart, Matrix.conjTranspose_smul, hcomm]
-  module
+  simp
 
 theorem trace_hamiltonianPart (H X : QMatrix d) :
     Matrix.trace (hamiltonianPart H X) = 0 := by
