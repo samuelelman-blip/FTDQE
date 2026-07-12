@@ -8,3 +8,4 @@ import FTDQE.InvariantSubspaceRelaxation
 import FTDQE.QuantumMatrix
 import FTDQE.QuantumGenerator
 import FTDQE.MatrixLindbladianRelaxation
+import FTDQE.GKLSGenerator
