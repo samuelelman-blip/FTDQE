@@ -1,0 +1,41 @@
+name: Lean CI
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          show-progress: false
+      - name: Install elan
+        run: |
+          curl https://elan.lean-lang.org/elan-init.sh -sSf | sh -s -- -y >/dev/null
+          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+      - name: Fetch dependencies
+        run: |
+          lake update > lake-update.log 2>&1 || {
+            cat lake-update.log
+            exit 1
+          }
+      - name: Build
+        run: |
+          lake build > lean-build.log 2>&1 || {
+            cat lean-build.log
+            exit 1
+          }
+      - name: Upload Lean logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lean-ci-logs
+          path: |
+            lake-update.log
+            lean-build.log
+          if-no-files-found: ignore

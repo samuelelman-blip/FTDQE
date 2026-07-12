@@ -1,0 +1,17 @@
+name = "FTDQE"
+version = "0.1.0"
+keywords = ["math", "quantum", "lindbladian", "formalization"]
+defaultTargets = ["FTDQE"]
+
+[leanOptions]
+pp.unicode.fun = true
+relaxedAutoImplicit = false
+weak.linter.mathlibStandardSet = true
+
+[[require]]
+name = "mathlib"
+scope = "leanprover-community"
+rev = "v4.31.0"
+
+[[lean_lib]]
+name = "FTDQE"
