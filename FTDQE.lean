@@ -13,3 +13,4 @@ import FTDQE.StationaryStateStability
 import FTDQE.CesaroStationaryExistence
 import FTDQE.MatrixStationaryStateStability
 import FTDQE.GroundStateOverlap
+import FTDQE.DissipatorLipschitz
