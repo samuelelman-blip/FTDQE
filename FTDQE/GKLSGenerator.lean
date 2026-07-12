@@ -36,9 +36,7 @@ theorem hamiltonianPart_isHermitian
   have hcomm : (H * X - X * H)ᴴ = -(H * X - X * H) := by
     simp [hH.eq, hX.eq, Matrix.conjTranspose_mul]
   rw [Matrix.IsHermitian, hamiltonianPart, Matrix.conjTranspose_smul, hcomm]
-  have hstar : star (-Complex.I) = Complex.I := by
-    apply Complex.ext <;> rfl
-  rw [hstar, smul_neg, neg_smul]
+  rw [Complex.star_def, Complex.conj_neg_I, smul_neg, neg_smul]
 
 theorem trace_hamiltonianPart (H X : QMatrix d) :
     Matrix.trace (hamiltonianPart H X) = 0 := by
