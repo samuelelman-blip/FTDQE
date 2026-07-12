@@ -149,7 +149,7 @@ theorem flow_stationary_unique_of_perturbed_relaxation
     field_simp [hdecay'.ne']
   have hexp : Real.exp (-decay * t) = 1 / (κ + 1) := by
     rw [harg, Real.exp_neg, Real.exp_log hkone]
-    rfl
+    simp [one_div]
   have hfactor : κ * Real.exp (-decay * t) < 1 := by
     rw [hexp]
     have hlt : κ / (κ + 1) < 1 :=
