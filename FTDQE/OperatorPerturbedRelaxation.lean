@@ -5,7 +5,7 @@ import FTDQE.PerturbedRelaxation
 # Operator-norm perturbed relaxation
 
 This file combines the Banach-algebra Duhamel identity with the scalar
-Duhamel--Grönwall theorem.  It gives the operator-level analytic statement of
+Duhamel--Grönwall theorem. It gives the operator-level analytic statement of
 Lemma 2 on any invariant real Banach space.
 -/
 
@@ -17,7 +17,7 @@ open NormedSpace
 /-- Operator-norm form of Lemma 2 in a real Banach algebra.
 
 The ideal semigroup has decay bound `κ exp (-rate t)`, and the perturbation has
-norm at most `η`.  Then the perturbed semigroup decays with rate
+norm at most `η`. Then the perturbed semigroup decays with rate
 `rate - κ * η`.
 -/
 theorem perturbed_relaxation_banach_algebra
@@ -51,7 +51,7 @@ theorem perturbed_relaxation_banach_algebra
       κ * η * (Real.exp (-rate * (t - s)) * h s)
     have hpoint : ∀ s ∈ Ioc (0 : ℝ) t, ‖V s‖ ≤ g s := by
       intro s hs
-      have hts : 0 ≤ t - s := sub_nonneg.mpr hs.2.le
+      have hts : 0 ≤ t - s := sub_nonneg.mpr hs.2
       have hm := hmix (t - s) hts
       dsimp [V, g, h]
       calc
@@ -77,11 +77,15 @@ theorem perturbed_relaxation_banach_algebra
       calc
         ‖∫ s in (0 : ℝ)..t, V s‖ ≤ ∫ s in (0 : ℝ)..t, g s := by
           apply intervalIntegral.norm_integral_le_of_norm_le ht
-          · exact Eventually.of_forall fun s hs => hpoint s hs
+          · exact Filter.Eventually.of_forall fun s hs => hpoint s hs
           · exact hgcont.intervalIntegrable _ _
         _ = κ * η * ∫ s in (0 : ℝ)..t,
             Real.exp (-rate * (t - s)) * h s := by
           simp [g, mul_assoc]
+    change ‖exp (t • (L + E))‖ ≤
+      κ * Real.exp (-rate * t) * 1 +
+        κ * η * ∫ s in (0 : ℝ)..t,
+          Real.exp (-rate * (t - s)) * h s
     rw [duhamel_exp_add L E t]
     calc
       ‖exp (t • L) + ∫ s in (0 : ℝ)..t, V s‖
