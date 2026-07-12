@@ -1,20 +1,58 @@
 import FTDQE.InvariantSubspaceRelaxation
+import Mathlib.Topology.Sequences
 
 /-!
 # Stationary-state stability
 
-This file begins the formalisation of Lemma 3.  It isolates the resolvent
-argument on the invariant traceless-Hermitian subspace from the separate
-finite-dimensional compactness argument that supplies existence.
+This file formalises the three structural ingredients of Lemma 3: existence
+from compact approximate stationary states, the resolvent stability estimate,
+and uniqueness from perturbed exponential relaxation.
 -/
 
 namespace FTDQE
+
+open Filter
+open scoped Topology
 
 /-- A vector is stationary for a continuous linear generator. -/
 def IsStationary
     {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
     (L : X →L[ℝ] X) (x : X) : Prop :=
   L x = 0
+
+/-- A vector is fixed by a continuous-time flow at every nonnegative time. -/
+def IsFlowStationary
+    {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
+    (flow : ℝ → X →L[ℝ] X) (x : X) : Prop :=
+  ∀ t : ℝ, 0 ≤ t → flow t x = x
+
+/--
+Compactness form of the Cesàro existence argument in Lemma 3(i).
+A sequence of states in a compact state space whose generator residual tends
+to zero has a stationary cluster point in that state space.
+-/
+theorem exists_stationary_of_compact_approximants
+    {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
+    (L : X →L[ℝ] X) (stateSpace : Set X)
+    (hcompact : IsCompact stateSpace)
+    (approximants : ℕ → X)
+    (hmem : ∀ n : ℕ, approximants n ∈ stateSpace)
+    (hresidual :
+      Tendsto (fun n : ℕ => L (approximants n)) atTop (𝓝 0)) :
+    ∃ σ' ∈ stateSpace, IsStationary L σ' := by
+  rcases hcompact.isSeqCompact hmem with
+    ⟨σ', hσ'mem, φ, hφmono, hφlim⟩
+  refine ⟨σ', hσ'mem, ?_⟩
+  unfold IsStationary
+  have hLlim :
+      Tendsto (fun n : ℕ => L (approximants (φ n))) atTop (𝓝 (L σ')) := by
+    simpa [Function.comp_def] using
+      (L.continuous.tendsto σ').comp hφlim
+  have hzero :
+      Tendsto (fun n : ℕ => L (approximants (φ n))) atTop (𝓝 0) := by
+    simpa [Function.comp_def] using
+      hresidual.comp hφmono.tendsto_atTop
+  exact tendsto_nhds_unique hLlim hzero
 
 /--
 A certified inverse of `L` on the invariant subspace selected by `P`.
@@ -81,5 +119,50 @@ theorem stationary_state_stability_of_resolvent
         mul_le_mul_of_nonneg_left herror hratio
       _ = κ * η / rate := by rw [hσ'norm]; ring
   exact ⟨hfirst, hsecond⟩
+
+/--
+Lemma 3(iii): exponential relaxation makes a stationary state unique whenever
+the perturbed decay rate `rate - κ * η` is positive.
+-/
+theorem flow_stationary_unique_of_perturbed_relaxation
+    {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
+    (flow : ℝ → X →L[ℝ] X) (P : X → Prop)
+    (κ rate η : ℝ)
+    (hκ : 0 < κ)
+    (hdecay : 0 < rate - κ * η)
+    (hrelax : ∀ t : ℝ, 0 ≤ t → ∀ y : X, P y →
+      ‖flow t y‖ ≤
+        κ * Real.exp (-(rate - κ * η) * t) * ‖y‖)
+    (σ₁ σ₂ : X)
+    (hσ₁ : IsFlowStationary flow σ₁)
+    (hσ₂ : IsFlowStationary flow σ₂)
+    (hdiff : P (σ₁ - σ₂)) :
+    σ₁ = σ₂ := by
+  let decay : ℝ := rate - κ * η
+  let t : ℝ := Real.log (κ + 1) / decay
+  have hdecay' : 0 < decay := hdecay
+  have hkone : 0 < κ + 1 := by linarith
+  have ht : 0 ≤ t := by
+    exact div_nonneg (Real.log_nonneg (by linarith)) hdecay'.le
+  have harg : -decay * t = -Real.log (κ + 1) := by
+    dsimp [t]
+    field_simp [hdecay'.ne']
+  have hexp : Real.exp (-decay * t) = 1 / (κ + 1) := by
+    rw [harg, Real.exp_neg, Real.exp_log hkone]
+    rfl
+  have hfactor : κ * Real.exp (-decay * t) < 1 := by
+    rw [hexp]
+    have hlt : κ / (κ + 1) < 1 :=
+      (div_lt_one hkone).2 (by linarith)
+    simpa [div_eq_mul_inv] using hlt
+  have hfixed : flow t (σ₁ - σ₂) = σ₁ - σ₂ := by
+    rw [map_sub, hσ₁ t ht, hσ₂ t ht]
+  have hbound := hrelax t ht (σ₁ - σ₂) hdiff
+  change ‖flow t (σ₁ - σ₂)‖ ≤
+    κ * Real.exp (-decay * t) * ‖σ₁ - σ₂‖ at hbound
+  rw [hfixed] at hbound
+  have hnormzero : ‖σ₁ - σ₂‖ = 0 := by
+    nlinarith [norm_nonneg (σ₁ - σ₂)]
+  exact sub_eq_zero.mp (norm_eq_zero.mp hnormzero)
 
 end FTDQE
