@@ -54,7 +54,7 @@ theorem perturbed_relaxation_on_invariant_subspace
       κ * η * (Real.exp (-rate * (t - s)) * h s)
     have hpoint : ∀ s ∈ Ioc (0 : ℝ) t, ‖V s‖ ≤ g s := by
       intro s hs
-      have hs0 : 0 ≤ s := hs.1
+      have hs0 : 0 ≤ s := hs.1.le
       have hts : 0 ≤ t - s := sub_nonneg.mpr hs.2
       have hm := hmix (t - s) hts (error (perturbed s x))
         (hPintegrand s hs0)
@@ -84,6 +84,10 @@ theorem perturbed_relaxation_on_invariant_subspace
         _ = κ * η * ∫ s in (0 : ℝ)..t,
             Real.exp (-rate * (t - s)) * h s := by
           simp [g, mul_assoc]
+    change ‖perturbed t x‖ ≤
+      κ * Real.exp (-rate * t) * ‖x‖ +
+        κ * η * ∫ s in (0 : ℝ)..t,
+          Real.exp (-rate * (t - s)) * h s
     rw [hduhamel t ht]
     calc
       ‖ideal t x + ∫ s in (0 : ℝ)..t, V s‖
