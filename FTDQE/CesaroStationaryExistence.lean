@@ -21,7 +21,7 @@ theorem tendsto_zero_of_norm_le_const_div_add_one
     Tendsto f atTop (𝓝 0) := by
   apply squeeze_zero_norm hbound
   simpa [div_eq_mul_inv] using
-    (tendsto_const_nhds.mul
+    ((tendsto_const_nhds (x := C)).mul
       (tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ)))
 
 /--
