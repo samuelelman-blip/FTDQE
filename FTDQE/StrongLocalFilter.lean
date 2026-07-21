@@ -21,7 +21,6 @@ theorem strong_local_filter_decay_margin
     mul_le_mul_of_nonneg_left hη hκ.le
   have hhalf : κ * (rate / (2 * κ)) = rate / 2 := by
     field_simp [hκ.ne']
-    <;> ring
   rw [hhalf] at hmul
   constructor <;> linarith
 
@@ -42,8 +41,10 @@ theorem strong_local_filter_relaxation
   intro t ht x
   have hmargin := (strong_local_filter_decay_margin
     κ rate η hκ hrate hη).1
-  have harg : -(rate - κ * η) * t ≤ -(rate / 2) * t :=
-    neg_le_neg (mul_le_mul_of_nonneg_right hmargin ht)
+  have hmul : (rate / 2) * t ≤ (rate - κ * η) * t :=
+    mul_le_mul_of_nonneg_right hmargin ht
+  have harg : -(rate - κ * η) * t ≤ -(rate / 2) * t := by
+    nlinarith
   have hexp : Real.exp (-(rate - κ * η) * t) ≤
       Real.exp (-(rate / 2) * t) :=
     Real.exp_le_exp.mpr harg
