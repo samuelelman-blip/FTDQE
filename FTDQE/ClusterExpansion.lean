@@ -27,20 +27,22 @@ def clusterRatio (κ rate δR ν : ℝ) : ℝ :=
 /--
 Certificate for the analytic and combinatorial input to Theorem 3.
 
-The fields `absoluteConvergence`, `kpBound`, and `perClusterBound` record the
-polymer reorganisation and Kotecký--Preiss estimates.  The two numerical bounds
-are the scalar consequences of the connected-walk expansion that are resummed
-below in Lean.
+The proposition parameters record absolute convergence, the
+Kotecký--Preiss estimate, and the per-cluster estimate.  The corresponding
+fields carry proofs of those propositions.  The two numerical bounds are the
+scalar consequences of the connected-walk expansion that are resummed below
+in Lean.
 -/
 structure ClusterExpansionCertificate
+    (absoluteConvergence kpBound perClusterBound : Prop)
     (globalError localError κ rate η δR q localConstant
       observableNorm supportSize : ℝ) where
   q_nonneg : 0 ≤ q
   q_le_kp : q ≤ kpConstant
   two_q_lt_one : 2 * q < 1
-  absoluteConvergence : Prop
-  kpBound : Prop
-  perClusterBound : Prop
+  absoluteConvergence_proof : absoluteConvergence
+  kpBound_proof : kpBound
+  perClusterBound_proof : perClusterBound
   global_recursion :
     globalError ≤ (κ / rate) * η + 2 * q * globalError
   local_bound :
@@ -73,16 +75,18 @@ convergence and the Kotecký--Preiss/per-cluster estimates, together with the
 global trace-norm and local-observable bounds of Eqs. (56)--(57) and (61).
 -/
 theorem convergent_cluster_expansion
+    (absoluteConvergence kpBound perClusterBound : Prop)
     (globalError localError κ rate η δR q localConstant
       observableNorm supportSize : ℝ)
     (hκ : 0 ≤ κ) (hrate : 0 < rate)
     (hη : 0 ≤ η)
     (cert : ClusterExpansionCertificate
+      absoluteConvergence kpBound perClusterBound
       globalError localError κ rate η δR q localConstant
         observableNorm supportSize) :
-    cert.absoluteConvergence ∧
-      cert.kpBound ∧
-      cert.perClusterBound ∧
+    absoluteConvergence ∧
+      kpBound ∧
+      perClusterBound ∧
       globalError ≤
         (κ / rate) * η / (1 - 2 * q) ∧
       localError ≤
@@ -95,8 +99,8 @@ theorem convergent_cluster_expansion
     cluster_global_error_bound
       globalError (κ / rate) η q hratio hη
         cert.two_q_lt_one cert.global_recursion
-  exact ⟨cert.absoluteConvergence, cert.kpBound,
-    cert.perClusterBound, hglobal, cert.local_bound⟩
+  exact ⟨cert.absoluteConvergence_proof, cert.kpBound_proof,
+    cert.perClusterBound_proof, hglobal, cert.local_bound⟩
 
 /--
 The global part of Theorem 3 recovers a prescribed trace-distance accuracy
