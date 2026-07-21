@@ -1,3 +1,8 @@
+/-
+Copyright (c) 2026 Samuel J. Elman. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Samuel J. Elman
+-/
 import FTDQE.RefreshRecursion
 
 /-!
@@ -27,12 +32,17 @@ theorem minibatch_refresh_geometric_bound
   | zero => simp
   | succ k ih =>
       have hdenpos : 0 < 1 - q := sub_pos.mpr hq1
+      have hsum :
+          d k + c ≤
+            q ^ k * d 0 +
+              q * (1 - q ^ k) / (1 - q) * c + c := by
+        exact add_le_add ih (le_refl c)
       have hmono :
           q * (d k + c) ≤
             q *
               (q ^ k * d 0 +
-                q * (1 - q ^ k) / (1 - q) * c + c) := by
-        exact mul_le_mul_of_nonneg_left (add_le_add_right ih c) hq0
+                q * (1 - q ^ k) / (1 - q) * c + c) :=
+        mul_le_mul_of_nonneg_left hsum hq0
       calc
         d (k + 1) ≤ q * (d k + c) := hrec k
         _ ≤ q *
@@ -68,7 +78,7 @@ half-contraction recursion of Lemma 5.
 -/
 theorem minibatch_refresh_half_bound
     (d : ℕ → ℝ) (q_b c : ℝ)
-    (hq0 : 0 ≤ q_b) (hqhalf : q_b ≤ 1 / 2)
+    (_hq0 : 0 ≤ q_b) (hqhalf : q_b ≤ 1 / 2)
     (hc : 0 ≤ c) (hd : ∀ k, 0 ≤ d k)
     (hrec : ∀ k, d (k + 1) ≤ q_b * (d k + c)) :
     ∀ k, d k ≤ d 0 / (2 : ℝ) ^ k + c := by
@@ -102,7 +112,7 @@ multiplicatively across a minibatch.
 -/
 theorem iterated_microstep_contraction
     (q : ℕ → ℝ) (γ : ℝ)
-    (hγ0 : 0 ≤ γ) (hγ1 : γ ≤ 1)
+    (_hγ0 : 0 ≤ γ) (hγ1 : γ ≤ 1)
     (hq0 : q 0 ≤ 1)
     (hstep : ∀ b, q (b + 1) ≤ (1 - γ) * q b) :
     ∀ b, q b ≤ (1 - γ) ^ b := by
