@@ -48,10 +48,14 @@ theorem stoppingTime_exponential_bound
     stoppingTime_nonneg κ rate ε hκ hrate hε0 hε1
   have hdecay : rate / 2 ≤ rate - κ * η := by
     linarith
+  have hmul_pos :
+      (rate / 2) * stoppingTime κ rate ε ≤
+        (rate - κ * η) * stoppingTime κ rate ε :=
+    mul_le_mul_of_nonneg_right hdecay ht
   have hmul :
       -(rate - κ * η) * stoppingTime κ rate ε ≤
         -(rate / 2) * stoppingTime κ rate ε := by
-    exact neg_le_neg (mul_le_mul_of_nonneg_right hdecay ht)
+    nlinarith
   have heq :
       -(rate / 2) * stoppingTime κ rate ε =
         -Real.log (4 * κ / ε) := by
