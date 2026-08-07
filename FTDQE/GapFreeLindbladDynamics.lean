@@ -114,7 +114,7 @@ theorem realTracePair_hasDerivAt {ι : Type*} [Fintype ι]
   have hcomp :
       HasDerivAt ((fun X : QMatrix d => realTracePairCLM O X) ∘ ρ)
         (realTracePairCLM O (gklsApply G J (ρ t))) t :=
-    houter.comp_hasDerivAt t (hρ t)
+    houter.comp_hasDerivAt (hρ t)
   have hderiv :
       HasDerivAt (fun s => realTracePair O (ρ s))
         (realTracePair O (gklsApply G J (ρ t))) t := by
