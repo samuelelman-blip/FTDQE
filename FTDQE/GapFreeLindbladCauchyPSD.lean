@@ -59,9 +59,8 @@ theorem inner_halfLineExp_pointwise (ω ω' s : ℝ) :
       (((ω + ω' : ℝ) : ℂ) * (s : ℂ)) =
         (((ω + ω') * s : ℝ) : ℂ) := by
     norm_num
-  rw [harg]
-  simp
-  congr 1
+  rw [harg, ← Complex.ofReal_exp]
+  congr 2
   ring
 
 theorem inner_halfLineExpLp {ω ω' : ℝ} (hω : ω < 0) (hω' : ω' < 0) :
