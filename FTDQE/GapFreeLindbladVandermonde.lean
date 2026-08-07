@@ -1,15 +1,6 @@
 import FTDQE.GapFreeLindblad
 import Mathlib.LinearAlgebra.Vandermonde
 
-/-!
-# Vandermonde separation of distinct Bohr components
-
-Finite-dimensional terminal step of the manuscript's jointly-dark argument. If the exponential
-profile has all of its first `n` moments equal to zero and the `n` frequencies are distinct, then
-each matrix-valued frequency component vanishes separately. Only injectivity is assumed; no
-quantitative lower bound on frequency separation occurs.
--/
-
 namespace FTDQE
 namespace GapFreeLindblad
 
@@ -20,7 +11,6 @@ noncomputable section
 
 variable {d n : ℕ}
 
-/-- Injectivity of real frequencies is preserved by the embedding into `ℂ`. -/
 theorem complex_ofReal_injective_comp {ω : Fin n → ℝ}
     (hω : Function.Injective ω) :
     Function.Injective (fun i => (ω i : ℂ)) := by
@@ -28,10 +18,14 @@ theorem complex_ofReal_injective_comp {ω : Fin n → ℝ}
   apply hω
   exact Complex.ofReal_injective hij
 
-/-- Matrix-valued Vandermonde separation.
+/-- Evaluation of a matrix entry as a complex-linear functional. -/
+def matrixEntryLinear (p q : Fin d) : QMatrix d →ₗ[ℂ] ℂ where
+  toFun M := M p q
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
 
-This is the exact algebraic conclusion used after differentiating
-`∑_j exp(ω_j s) V_j = 0` at `s=0`. -/
+/-- Distinct frequencies separate matrix-valued moments.  Only injectivity is required;
+there is no lower bound on frequency separation. -/
 theorem matrix_eq_zero_of_vandermonde_moments
     {ω : Fin n → ℝ} (hω : Function.Injective ω)
     (V : Fin n → QMatrix d)
@@ -44,11 +38,10 @@ theorem matrix_eq_zero_of_vandermonde_moments
   have hscalar : ∀ k : Fin n,
       (∑ r : Fin n, coeff r * ((ω r : ℂ) ^ (k : ℕ))) = 0 := by
     intro k
-    have hentry := congrArg (fun M : QMatrix d => M p q) (hmom k)
+    have hentry := congrArg (matrixEntryLinear (d := d) p q) (hmom k)
     have hpowCoeff :
         (∑ r : Fin n, ((ω r : ℂ) ^ (k : ℕ)) * coeff r) = 0 := by
-      simpa only [Finset.sum_apply, Matrix.smul_apply, smul_eq_mul,
-        Matrix.zero_apply, coeff] using hentry
+      simpa [matrixEntryLinear, coeff] using hentry
     calc
       (∑ r : Fin n, coeff r * ((ω r : ℂ) ^ (k : ℕ))) =
           ∑ r : Fin n, ((ω r : ℂ) ^ (k : ℕ)) * coeff r := by
