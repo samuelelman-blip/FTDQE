@@ -33,3 +33,4 @@ import FTDQE.GapFreeLindbladAbstractLyapunov
 import FTDQE.GapFreeLindbladKernelFamily
 import FTDQE.GapFreeLindbladKernelGram
 import FTDQE.GapFreeLindbladCauchyPSD
+import FTDQE.GapFreeLindbladM1
