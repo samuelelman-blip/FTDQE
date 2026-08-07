@@ -125,7 +125,6 @@ theorem constantKernel_drift_factor
   have hsum : ω + ω' ≠ 0 := by linarith
   rw [constantKernel]
   field_simp
-  ring
 
 /-- For the linear weight the drift coefficient has the expected negative Cauchy form. -/
 theorem linearKernel_drift_factor
@@ -136,7 +135,6 @@ theorem linearKernel_drift_factor
   have hsum : ω + ω' ≠ 0 := by linarith
   rw [linearKernel]
   field_simp
-  ring
 
 /-- A linear combination of downward components is dark on `P` whenever every component is. -/
 theorem sum_smul_mul_eq_zero
@@ -154,29 +152,30 @@ open intervalIntegral
 
 /-- Scalar endpoint estimate used in Theorem 2.
 
-This is the last step of the paper's `1/t` argument: a nonincreasing nonnegative target error
+This is the last step of the paper's `1/t` argument: a nonincreasing target error
 whose time integral is bounded by `W/κ` obeys the advertised endpoint bound. -/
 theorem antitone_endpoint_le_of_integral_bound
     {q : ℝ → ℝ} {κ W t : ℝ}
     (hκ : 0 < κ) (ht : 0 < t)
-    (hq_nonneg : ∀ s ∈ Set.Icc (0 : ℝ) t, 0 ≤ q s)
+    (_hq_nonneg : ∀ s ∈ Set.Icc (0 : ℝ) t, 0 ≤ q s)
     (hq_anti : Antitone q)
-    (hq_int : IntervalIntegrable q volume 0 t)
+    (hq_int : IntervalIntegrable q MeasureTheory.volume 0 t)
     (hbound : κ * ∫ s in (0 : ℝ)..t, q s ≤ W) :
     q t ≤ W / (κ * t) := by
+  have hconst_intg :
+      IntervalIntegrable (fun _s : ℝ => q t) MeasureTheory.volume 0 t :=
+    intervalIntegrable_const
   have hconst_int :
       ∫ _s in (0 : ℝ)..t, q t = t * q t := by
-    simp [ht.ne']
+    simp
   have hmono :
       ∫ s in (0 : ℝ)..t, q t ≤ ∫ s in (0 : ℝ)..t, q s := by
-    apply intervalIntegral.integral_mono_on
-    · exact intervalIntegrable_const
-    · exact hq_int
-    · exact hq_nonneg
-    · intro s hs
-      exact hq_anti hs.2
+    apply intervalIntegral.integral_mono_on ht.le hconst_intg hq_int
+    intro s hs
+    exact hq_anti hs.2
   rw [hconst_int] at hmono
-  have hprod : κ * (t * q t) ≤ W := le_trans (mul_le_mul_of_nonneg_left hmono hκ.le) hbound
+  have hprod : κ * (t * q t) ≤ W :=
+    le_trans (mul_le_mul_of_nonneg_left hmono hκ.le) hbound
   have hkt : 0 < κ * t := mul_pos hκ ht
   apply (le_div_iff₀ hkt).2
   nlinarith
