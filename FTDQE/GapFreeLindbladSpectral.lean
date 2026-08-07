@@ -42,8 +42,10 @@ theorem bohr_mul_hasEnergy
     _ = A * (H * P) + (ω : ℂ) • (A * P) := by
       simp [Matrix.add_mul, Matrix.mul_assoc]
     _ = A * ((E : ℂ) • P) + (ω : ℂ) • (A * P) := by rw [hP]
+    _ = ((E : ℂ) + (ω : ℂ)) • (A * P) := by
+      simp [← add_smul]
     _ = ((E + ω : ℝ) : ℂ) • (A * P) := by
-      simp [Matrix.mul_smul, ← add_smul]
+      norm_num
 
 /-- A downward component lowering by at least `ε` annihilates every source energy sector lying
 strictly below `E₀+ε`.  No lower bound on a spectral gap or on a Bohr-frequency separation is used. -/
@@ -84,13 +86,30 @@ theorem isBohrComponent_shift_iff
     (H A : QMatrix d) (ω c : ℝ) :
     IsBohrComponent (H + (c : ℂ) • (1 : QMatrix d)) A ω ↔
       IsBohrComponent H A ω := by
-  constructor <;> intro h
-  · dsimp [IsBohrComponent] at h ⊢
-    simp [Matrix.add_mul, Matrix.mul_add, Matrix.mul_assoc] at h ⊢
-    module at h ⊢
-  · dsimp [IsBohrComponent] at h ⊢
-    simp [Matrix.add_mul, Matrix.mul_add, Matrix.mul_assoc] at h ⊢
-    module at h ⊢
+  constructor
+  · intro h
+    dsimp [IsBohrComponent] at h ⊢
+    have hs :
+        H * A + (c : ℂ) • A =
+          A * H + (c : ℂ) • A + (ω : ℂ) • A := by
+      simpa [Matrix.add_mul, Matrix.mul_add] using h
+    have hs' :
+        H * A + (c : ℂ) • A =
+          (A * H + (ω : ℂ) • A) + (c : ℂ) • A := by
+      calc
+        H * A + (c : ℂ) • A =
+            A * H + (c : ℂ) • A + (ω : ℂ) • A := hs
+        _ = (A * H + (ω : ℂ) • A) + (c : ℂ) • A := by abel
+    exact add_right_cancel hs'
+  · intro h
+    dsimp [IsBohrComponent] at h ⊢
+    calc
+      (H + (c : ℂ) • (1 : QMatrix d)) * A =
+          H * A + (c : ℂ) • A := by simp [Matrix.add_mul]
+      _ = (A * H + (ω : ℂ) • A) + (c : ℂ) • A := by rw [h]
+      _ = A * H + (c : ℂ) • A + (ω : ℂ) • A := by abel
+      _ = A * (H + (c : ℂ) • (1 : QMatrix d)) + (ω : ℂ) • A := by
+        simp [Matrix.mul_add]
 
 end
 
