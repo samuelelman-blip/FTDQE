@@ -22,6 +22,17 @@ noncomputable section
 /-- The scalar exponential on the positive half-line, viewed as a complex-valued function. -/
 def halfLineExp (ω : ℝ) : ℝ → ℂ := fun s => (Real.exp (ω * s) : ℂ)
 
+/-- The standard inner product on `ℂ` is conjugate multiplication. -/
+theorem complex_inner_eq_star_mul (x y : ℂ) :
+    ⟪x, y⟫_ℂ = star x * y := by
+  calc
+    ⟪x, y⟫_ℂ = ⟪x • (1 : ℂ), y • (1 : ℂ)⟫_ℂ := by simp
+    _ = star x * ⟪(1 : ℂ), y • (1 : ℂ)⟫_ℂ := by
+      rw [inner_smul_left]
+    _ = star x * (y * ⟪(1 : ℂ), (1 : ℂ)⟫_ℂ) := by
+      rw [inner_smul_right]
+    _ = star x * y := by simp
+
 /-- Negative exponential rates define square-integrable functions on `(0,∞)`. -/
 theorem halfLineExp_memLp_two {ω : ℝ} (hω : ω < 0) :
     MemLp (halfLineExp ω) 2 (Measure.restrict volume (Ioi 0)) := by
@@ -54,7 +65,8 @@ def halfLineExpLp (ω : ℝ) (hω : ω < 0) :
 theorem inner_halfLineExp_pointwise (ω ω' s : ℝ) :
     ⟪halfLineExp ω s, halfLineExp ω' s⟫_ℂ =
       Complex.exp (((ω + ω' : ℝ) : ℂ) * (s : ℂ)) := by
-  change star ((Real.exp (ω * s) : ℂ)) * (Real.exp (ω' * s) : ℂ) = _
+  rw [complex_inner_eq_star_mul]
+  simp only [halfLineExp, starRingEnd_apply, map_real]
   rw [show star ((Real.exp (ω * s) : ℂ)) = (Real.exp (ω * s) : ℂ) by simp]
   rw [← Complex.ofReal_mul, ← Real.exp_add]
   have harg :
@@ -88,7 +100,6 @@ theorem inner_halfLineExpLp {ω ω' : ℝ} (hω : ω < 0) (hω' : ω' < 0) :
     rw [hs, hs']
     exact inner_halfLineExp_pointwise ω ω' s
   rw [integral_congr_ae hcongr]
-  rw [MeasureTheory.integral_restrict measurableSet_Ioi]
   have hsum : ω + ω' < 0 := by linarith
   rw [integral_exp_mul_complex_Ioi (a := ((ω + ω' : ℝ) : ℂ)) (by simpa using hsum) 0]
   simp only [mul_zero, Complex.exp_zero]
