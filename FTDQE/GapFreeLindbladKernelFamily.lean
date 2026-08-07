@@ -45,16 +45,16 @@ theorem linearKernelMatrix_posSemidef_of_constant
   rw [linearKernelMatrix_eq_hadamard]
   exact h0.hadamard h0
 
-/-- More generally, entrywise powers preserve positive semidefiniteness recursively. -/
+/-- Positive integer Hadamard powers, indexed so `0` means exponent one. -/
 def kernelHadamardPow (C : Matrix ι ι ℂ) : ℕ → Matrix ι ι ℂ
-  | 0 => fun _ _ => 1
+  | 0 => C
   | n + 1 => kernelHadamardPow C n ⊙ C
 
-/-- Positive semidefiniteness of Hadamard powers, starting from exponent one. -/
+/-- Positive semidefiniteness is preserved by every positive Hadamard power. -/
 theorem kernelHadamardPow_posSemidef
     [Finite ι]
     (C : Matrix ι ι ℂ) (hC : C.PosSemidef) :
-    ∀ n : ℕ, (kernelHadamardPow C (n + 1)).PosSemidef
+    ∀ n : ℕ, (kernelHadamardPow C n).PosSemidef
   | 0 => by simpa [kernelHadamardPow] using hC
   | n + 1 => by
       rw [kernelHadamardPow]
