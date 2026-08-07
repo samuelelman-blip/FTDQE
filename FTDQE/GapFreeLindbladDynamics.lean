@@ -108,11 +108,10 @@ theorem realTracePair_hasDerivAt {ι : Type*} [Fintype ι]
     HasDerivAt (fun s => realTracePair O (ρ s))
       (realTracePair (fullHeisenbergAdjoint G J O) (ρ t)) t := by
   have houter :
-      HasFDerivAt (fun X : QMatrix d => realTracePairCLM O X)
-        (realTracePairCLM O) (ρ t) :=
+      HasFDerivAt (realTracePairCLM O) (realTracePairCLM O) (ρ t) :=
     (realTracePairCLM O).hasFDerivAt
   have hcomp :
-      HasDerivAt ((fun X : QMatrix d => realTracePairCLM O X) ∘ ρ)
+      HasDerivAt ((realTracePairCLM O) ∘ ρ)
         (realTracePairCLM O (gklsApply G J (ρ t))) t :=
     houter.comp_hasDerivAt t (hρ t)
   have hderiv :
