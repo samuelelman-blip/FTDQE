@@ -49,11 +49,14 @@ theorem hermitianMinEigenvalue_smul_one_le
   have hdiag : Λ.PosSemidef := by
     apply Matrix.PosSemidef.diagonal
     intro i
-    exact_mod_cast sub_nonneg.mpr (hermitianMinEigenvalue_le_eigenvalue A hA i)
+    change (0 : ℂ) ≤ ((hA.eigenvalues i - κ : ℝ) : ℂ)
+    exact Complex.ofReal_nonneg.mpr <|
+      sub_nonneg.mpr (by simpa [κ] using hermitianMinEigenvalue_le_eigenvalue A hA i)
   have hconj : (U * Λ * Uᴴ).PosSemidef := hdiag.mul_mul_conjTranspose_same U
   have hunit : U * Uᴴ = (1 : Matrix n n ℂ) := by
-    simpa [U, star_eq_conjTranspose] using
-      (Unitary.mul_star_self hA.eigenvectorUnitary)
+    change (hA.eigenvectorUnitary : Matrix n n ℂ) *
+        (hA.eigenvectorUnitary : Matrix n n ℂ)ᴴ = 1
+    exact Unitary.coe_mul_star_self hA.eigenvectorUnitary
   have hscalar : U * ((κ : ℂ) • (1 : Matrix n n ℂ)) * Uᴴ =
       (κ : ℂ) • (1 : Matrix n n ℂ) := by
     calc
@@ -61,7 +64,10 @@ theorem hermitianMinEigenvalue_smul_one_le
           (κ : ℂ) • (U * Uᴴ) := by simp [Matrix.mul_assoc]
       _ = (κ : ℂ) • (1 : Matrix n n ℂ) := by rw [hunit]
   have hspec : A = U * Matrix.diagonal (fun i => (hA.eigenvalues i : ℂ)) * Uᴴ := by
-    simpa [U, Unitary.conjStarAlgAut_apply] using hA.spectral_theorem
+    change A = (hA.eigenvectorUnitary : Matrix n n ℂ) *
+      Matrix.diagonal (fun i => (hA.eigenvalues i : ℂ)) *
+      (hA.eigenvectorUnitary : Matrix n n ℂ)ᴴ
+    simpa only [Unitary.conjStarAlgAut_apply, Function.comp_apply] using hA.spectral_theorem
   have hdiagsub :
       Matrix.diagonal (fun i => (hA.eigenvalues i : ℂ)) -
           ((κ : ℂ) • (1 : Matrix n n ℂ)) = Λ := by
@@ -70,11 +76,18 @@ theorem hermitianMinEigenvalue_smul_one_le
     · subst j
       simp [Λ, κ]
     · simp [Λ, hij]
+  have hfirst :
+      A - ((κ : ℂ) • (1 : Matrix n n ℂ)) =
+        (U * Matrix.diagonal (fun i => (hA.eigenvalues i : ℂ)) * Uᴴ) -
+          ((κ : ℂ) • (1 : Matrix n n ℂ)) :=
+    congrArg (fun X : Matrix n n ℂ => X - ((κ : ℂ) • (1 : Matrix n n ℂ))) hspec
   have heq : A - ((κ : ℂ) • (1 : Matrix n n ℂ)) = U * Λ * Uᴴ := by
     calc
       A - ((κ : ℂ) • (1 : Matrix n n ℂ)) =
-          (U * Matrix.diagonal (fun i => (hA.eigenvalues i : ℂ))) * Uᴴ -
-            U * ((κ : ℂ) • (1 : Matrix n n ℂ)) * Uᴴ := by rw [hspec, hscalar]
+          (U * Matrix.diagonal (fun i => (hA.eigenvalues i : ℂ)) * Uᴴ) -
+            ((κ : ℂ) • (1 : Matrix n n ℂ)) := hfirst
+      _ = (U * Matrix.diagonal (fun i => (hA.eigenvalues i : ℂ)) * Uᴴ) -
+            U * ((κ : ℂ) • (1 : Matrix n n ℂ)) * Uᴴ := by rw [hscalar]
       _ = (U * Matrix.diagonal (fun i => (hA.eigenvalues i : ℂ)) -
             U * ((κ : ℂ) • (1 : Matrix n n ℂ))) * Uᴴ := by
               rw [Matrix.sub_mul]
@@ -104,7 +117,7 @@ def kappaRestricted
 theorem kappaRestricted_smul_projector_le
     (P K : QMatrix d) (U : Matrix (Fin d) (Fin (r + 1)) ℂ)
     (hK : K.IsHermitian)
-    (hUstarU : Uᴴ * U = 1)
+    (_hUstarU : Uᴴ * U = 1)
     (hUUstar : U * Uᴴ = P)
     (hKU : P * K * P = K) :
     ((kappaRestricted K U hK : ℂ) • P) ≤ K := by
