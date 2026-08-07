@@ -52,7 +52,7 @@ theorem bohr_mul_hasEnergy
     _ = ((E : ℂ) + (ω : ℂ)) • (A * P) := by
       simp [← add_smul]
     _ = ((E + ω : ℝ) : ℂ) • (A * P) := by
-      rw [Complex.ofReal_add]
+      rw [← Complex.ofReal_add]
 
 /-- A downward component lowering by at least `ε` annihilates every source energy sector lying
 strictly below `E₀+ε`.  No lower bound on a spectral gap or on a Bohr-frequency separation is used. -/
@@ -93,13 +93,29 @@ theorem isBohrComponent_shift_iff
     (H A : QMatrix d) (ω c : ℝ) :
     IsBohrComponent (H + (c : ℂ) • (1 : QMatrix d)) A ω ↔
       IsBohrComponent H A ω := by
-  constructor <;> intro h
-  · dsimp [IsBohrComponent] at h ⊢
-    simp [Matrix.add_mul, Matrix.mul_add, ofReal_smul_qMatrix] at h ⊢
-    module at h ⊢
-  · dsimp [IsBohrComponent] at h ⊢
-    simp [Matrix.add_mul, Matrix.mul_add, ofReal_smul_qMatrix] at h ⊢
-    module at h ⊢
+  constructor
+  · intro h
+    have hexp :
+        H * A + c • A = A * H + c • A + ω • A := by
+      simpa [IsBohrComponent, Matrix.add_mul, Matrix.mul_add,
+        ofReal_smul_qMatrix] using h
+    have hcancel :
+        H * A + c • A = (A * H + ω • A) + c • A := by
+      calc
+        H * A + c • A = A * H + c • A + ω • A := hexp
+        _ = (A * H + ω • A) + c • A := by abel
+    have hreal : H * A = A * H + ω • A := add_right_cancel hcancel
+    simpa [IsBohrComponent, ofReal_smul_qMatrix] using hreal
+  · intro h
+    have hreal : H * A = A * H + ω • A := by
+      simpa [IsBohrComponent, ofReal_smul_qMatrix] using h
+    have hexp :
+        H * A + c • A = A * H + c • A + ω • A := by
+      calc
+        H * A + c • A = (A * H + ω • A) + c • A := by rw [hreal]
+        _ = A * H + c • A + ω • A := by abel
+    simpa [IsBohrComponent, Matrix.add_mul, Matrix.mul_add,
+      ofReal_smul_qMatrix] using hexp
 
 end
 
