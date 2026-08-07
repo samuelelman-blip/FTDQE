@@ -45,6 +45,7 @@ theorem matrix_eq_zero_of_vandermonde_moments
       (∑ r : Fin n, coeff r * ((ω r : ℂ) ^ (k : ℕ))) = 0 := by
     intro k
     have hentry := congrFun (congrFun (hmom k) p) q
+    change (∑ r : Fin n, ((ω r : ℂ) ^ (k : ℕ)) * V r p q) = 0 at hentry
     simpa [coeff, mul_comm] using hentry
   have hz : coeff = 0 :=
     Matrix.eq_zero_of_forall_pow_sum_mul_pow_eq_zero
