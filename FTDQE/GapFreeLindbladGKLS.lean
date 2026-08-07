@@ -46,20 +46,22 @@ theorem crossDissipator_smul_left
     (c : ℂ) (A B ρ : QMatrix d) :
     crossDissipator (c • A) B ρ = c • crossDissipator A B ρ := by
   simp [crossDissipator, Matrix.mul_assoc, smul_sub, smul_add, smul_smul]
+  module
 
 /-- `crossDissipator` is conjugate-linear in its second jump argument. -/
 theorem crossDissipator_smul_right
     (c : ℂ) (A B ρ : QMatrix d) :
     crossDissipator A (c • B) ρ = star c • crossDissipator A B ρ := by
   simp [crossDissipator, Matrix.mul_assoc, smul_sub, smul_add, smul_smul]
+  module
 
 /-- `crossDissipator` preserves finite sums in its first argument. -/
 theorem crossDissipator_sum_left
     (F : ι → QMatrix d) (B ρ : QMatrix d) :
     crossDissipator (∑ i, F i) B ρ = ∑ i, crossDissipator (F i) B ρ := by
   classical
-  simp [crossDissipator, Matrix.conjTranspose_sum, Finset.sum_mul, Finset.mul_sum,
-    Finset.sum_sub_distrib, Finset.smul_sum, Matrix.mul_assoc]
+  simp [crossDissipator, Finset.sum_mul, Finset.mul_sum,
+    Finset.sum_sub_distrib, Finset.sum_add_distrib, Finset.smul_sum, Matrix.mul_assoc]
 
 /-- `crossDissipator` preserves finite sums in its second argument. -/
 theorem crossDissipator_sum_right
@@ -67,7 +69,7 @@ theorem crossDissipator_sum_right
     crossDissipator A (∑ j, F j) ρ = ∑ j, crossDissipator A (F j) ρ := by
   classical
   simp [crossDissipator, Matrix.conjTranspose_sum, Finset.sum_mul, Finset.mul_sum,
-    Finset.sum_sub_distrib, Finset.smul_sum, Matrix.mul_assoc]
+    Finset.sum_sub_distrib, Finset.sum_add_distrib, Finset.smul_sum, Matrix.mul_assoc]
 
 /-- Full sesquilinear expansion of the correlated cross dissipator. -/
 theorem crossDissipator_sum_smul
