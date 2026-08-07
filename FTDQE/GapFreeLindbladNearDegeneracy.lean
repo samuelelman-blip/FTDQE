@@ -38,7 +38,7 @@ theorem nearDeg_cauchy_det
     nlinarith
   simp [nearDegA, nearDegB, nearDegD]
   field_simp [hΩ, hΩδ, hmid, h2Ω, h2sum, hsq, hQ]
-  ring
+  ring_nf
 
 /-- Including the common factor `2 γ ε²` reproduces the manuscript determinant exactly. -/
 theorem nearDeg_m1_det
@@ -56,7 +56,7 @@ theorem nearDeg_m1_det
   rw [nearDeg_cauchy_det hΩ hΩδ hmid]
   have hsq : (2 * Ω + δ) ^ 2 ≠ 0 := pow_ne_zero 2 hmid
   field_simp [hΩ, hΩδ, hmid, hsq]
-  ring
+  ring_nf
 
 end
 
