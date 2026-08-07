@@ -2,15 +2,6 @@ import FTDQE.GapFreeLindbladKernelGram
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.MeasureTheory.Function.L2Space
 
-/-!
-# Positivity of the downward Cauchy Kossakowski kernel
-
-For frequencies `ωᵢ < 0`, the matrix `1 / (-(ωᵢ+ωⱼ))` is the Gram matrix of the
-functions `s ↦ exp (ωᵢ s)` in `L²((0,∞))`.  This gives a direct Lean proof of the
-positive-semidefiniteness used by the constant kernel, and hence by the Hadamard-power
-normalized family.
--/
-
 namespace FTDQE
 namespace GapFreeLindblad
 
@@ -19,24 +10,27 @@ open scoped BigOperators ComplexOrder InnerProductSpace MatrixOrder MeasureTheor
 
 noncomputable section
 
-/-- The scalar exponential on the positive half-line, viewed as a complex-valued function. -/
 def halfLineExp (ω : ℝ) : ℝ → ℂ := fun s => (Real.exp (ω * s) : ℂ)
 
-/-- Inner product of real numbers embedded in `ℂ`. -/
 theorem complex_inner_ofReal (x y : ℝ) :
     ⟪(x : ℂ), (y : ℂ)⟫_ℂ = ((x * y : ℝ) : ℂ) := by
-  change star (x : ℂ) * (y : ℂ) = ((x * y : ℝ) : ℂ)
-  simp
+  calc
+    ⟪(x : ℂ), (y : ℂ)⟫_ℂ =
+        ⟪(x : ℂ) • (1 : ℂ), (y : ℂ) • (1 : ℂ)⟫_ℂ := by simp
+    _ = x • ⟪(1 : ℂ), (y : ℂ) • (1 : ℂ)⟫_ℂ := by
+      rw [inner_smul_real_left]
+    _ = x • (y • ⟪(1 : ℂ), (1 : ℂ)⟫_ℂ) := by
+      rw [inner_smul_real_right]
+    _ = ((x * y : ℝ) : ℂ) := by
+      simp [Complex.real_smul]
 
-/-- Negative exponential rates define square-integrable functions on `(0,∞)`. -/
 theorem halfLineExp_memLp_two {ω : ℝ} (hω : ω < 0) :
     MemLp (halfLineExp ω) 2 (Measure.restrict volume (Ioi 0)) := by
   have hcont : Continuous (halfLineExp ω) := by
     unfold halfLineExp
     fun_prop
-  have hmeas :
-      AEStronglyMeasurable (halfLineExp ω) (Measure.restrict volume (Ioi 0)) :=
-    hcont.aestronglyMeasurable
+  have hmeas : AEStronglyMeasurable (halfLineExp ω)
+      (Measure.restrict volume (Ioi 0)) := hcont.aestronglyMeasurable
   rw [memLp_two_iff_integrable_sq_norm hmeas]
   change IntegrableOn (fun s : ℝ => ‖halfLineExp ω s‖ ^ 2) (Ioi 0)
   have hfun :
@@ -51,28 +45,24 @@ theorem halfLineExp_memLp_two {ω : ℝ} (hω : ω < 0) :
   rw [hfun]
   exact integrableOn_exp_mul_Ioi (by linarith) 0
 
-/-- The corresponding `L²` vector. -/
 def halfLineExpLp (ω : ℝ) (hω : ω < 0) :
     ℝ →₂[(Measure.restrict volume (Ioi 0))] ℂ :=
   (halfLineExp_memLp_two hω).toLp (halfLineExp ω)
 
-/-- Pointwise scalar inner product of the real exponential embeddings. -/
 theorem inner_halfLineExp_pointwise (ω ω' s : ℝ) :
     ⟪halfLineExp ω s, halfLineExp ω' s⟫_ℂ =
       Complex.exp (((ω + ω' : ℝ) : ℂ) * (s : ℂ)) := by
   rw [halfLineExp, halfLineExp, complex_inner_ofReal]
-  have hleft :
-      ((Real.exp (ω * s) * Real.exp (ω' * s) : ℝ) : ℂ) =
-        ((Real.exp ((ω + ω') * s) : ℝ) : ℂ) := by
-    rw [← Real.exp_add]
-    congr 2
-    ring
-  rw [hleft]
-  rw [← Complex.ofReal_exp]
-  congr 2
-  norm_num
+  rw [← Real.exp_add]
+  have harg :
+      (((ω + ω' : ℝ) : ℂ) * (s : ℂ)) =
+        (((ω + ω') * s : ℝ) : ℂ) := by
+    norm_num
+  rw [harg]
+  simp
+  congr 1
+  ring
 
-/-- Inner products of the exponential `L²` vectors give the Cauchy denominator exactly. -/
 theorem inner_halfLineExpLp {ω ω' : ℝ} (hω : ω < 0) (hω' : ω' < 0) :
     ⟪halfLineExpLp ω hω, halfLineExpLp ω' hω'⟫_ℂ =
       ((1 / (-(ω + ω')) : ℝ) : ℂ) := by
@@ -96,9 +86,8 @@ theorem inner_halfLineExpLp {ω ω' : ℝ} (hω : ω < 0) (hω' : ω' < 0) :
     exact inner_halfLineExp_pointwise ω ω' s
   rw [integral_congr_ae hcongr]
   have hsum : ω + ω' < 0 := by linarith
-  have hformula :=
-    integral_exp_mul_complex_Ioi
-      (a := ((ω + ω' : ℝ) : ℂ)) (by simpa using hsum) 0
+  have hformula := integral_exp_mul_complex_Ioi
+    (a := ((ω + ω' : ℝ) : ℂ)) (by simpa using hsum) 0
   calc
     (∫ s : ℝ in Ioi 0, Complex.exp (((ω + ω' : ℝ) : ℂ) * (s : ℂ))) =
         -Complex.exp (((ω + ω' : ℝ) : ℂ) * (0 : ℝ)) /
@@ -106,18 +95,15 @@ theorem inner_halfLineExpLp {ω ω' : ℝ} (hω : ω < 0) (hω' : ω' < 0) :
     _ = -((1 : ℂ) / ((ω + ω' : ℝ) : ℂ)) := by simp
     _ = (((1 / (-(ω + ω')) : ℝ) : ℂ)) := by
       rw [Complex.ofReal_div, Complex.ofReal_one, Complex.ofReal_neg]
-      ring
+      simp [div_eq_mul_inv]
 
 section Finite
 
 variable {ι : Type*} [Finite ι]
 
-/-- Unscaled Cauchy matrix of a negative frequency family. -/
 def cauchyFrequencyMatrix (ω : ι → ℝ) : Matrix ι ι ℂ :=
   fun i j => ((1 / (-(ω i + ω j)) : ℝ) : ℂ)
 
-/-- The negative-frequency Cauchy matrix is positive semidefinite, with no lower bound on
-pairwise frequency separations. -/
 theorem cauchyFrequencyMatrix_posSemidef
     (ω : ι → ℝ) (hω : ∀ i, ω i < 0) :
     (cauchyFrequencyMatrix ω).PosSemidef := by
@@ -127,8 +113,6 @@ theorem cauchyFrequencyMatrix_posSemidef
   intro i j
   exact (inner_halfLineExpLp (hω i) (hω j)).symm
 
-/-- The manuscript's constant kernel `2 ε / (-(ωᵢ+ωⱼ))` is positive semidefinite for
-`ε ≥ 0` and strictly downward frequencies. -/
 theorem constantKernelMatrix_posSemidef
     {ε : ℝ} (hε : 0 ≤ ε) (ω : ι → ℝ) (hω : ∀ i, ω i < 0) :
     (constantKernelMatrix ε ω).PosSemidef := by
@@ -138,10 +122,9 @@ theorem constantKernelMatrix_posSemidef
   have hs := hC.smul hscale
   convert hs using 1
   ext i j
-  simp [constantKernelMatrix, constantKernel, cauchyFrequencyMatrix, Matrix.smul_apply,
-    div_eq_mul_inv, mul_assoc]
+  simp [constantKernelMatrix, constantKernel, cauchyFrequencyMatrix,
+    Matrix.smul_apply, div_eq_mul_inv, mul_assoc]
 
-/-- Therefore the linear-weight kernel `m₁` is positive semidefinite as well. -/
 theorem linearKernelMatrix_posSemidef
     {ε : ℝ} (hε : 0 ≤ ε) (ω : ι → ℝ) (hω : ∀ i, ω i < 0) :
     (linearKernelMatrix ε ω).PosSemidef :=
