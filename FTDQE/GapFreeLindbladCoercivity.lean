@@ -1,82 +1,141 @@
 import FTDQE.GapFreeLindbladDynamicConvergence
+import Mathlib.Analysis.Matrix.Spectrum
+import Mathlib.Analysis.Matrix.PosDef
+import Mathlib.Data.Finset.Max
 
 /-!
-# Operator coercivity constant
+# Spectral coercivity constant
 
-The manuscript defines `κ_m(ε)` as the minimum eigenvalue of the Lyapunov operator
-`K_m` restricted to the above-threshold subspace.  Once target darkness has made `K_m`
-block diagonal with respect to the target/complement decomposition, this is equivalently the
-largest real scalar `κ` for which the Loewner inequality `κ P_> ≤ K_m` holds.
-
-This file formalizes that equivalent operator characterization and wires it directly into the
-GKLS `1/t` theorem.  Thus the runtime theorem no longer accepts an unrelated scalar `κ`: it
-accepts a coercivity constant certified to be the greatest Loewner lower bound for the actual
-pair `(K_m,P_>)`.
+This file identifies the scalar coercivity parameter used by the dynamical `1/t`
+theorem with the minimum eigenvalue of the Lyapunov operator compressed to the
+excited sector.
 -/
 
 namespace FTDQE
 namespace GapFreeLindblad
 
-open Matrix Set intervalIntegral
-open scoped BigOperators ComplexOrder MatrixOrder
+open Matrix
+open scoped ComplexOrder MatrixOrder BigOperators
 
 noncomputable section
 
-variable {d : ℕ}
+variable {d r : ℕ}
 
-/-- `κ` is the operator coercivity constant of `K` on the positive target-complement
-operator `P` when it is the greatest scalar satisfying `κ P ≤ K` in Loewner order.
+/-- Minimum eigenvalue of a nonempty finite-dimensional Hermitian matrix. -/
+def hermitianMinEigenvalue
+    {n : Type*} [Fintype n] [Nonempty n]
+    (A : Matrix n n ℂ) (hA : A.IsHermitian) : ℝ :=
+  Finset.min' (Finset.univ.image hA.eigenvalues) (by simp)
 
-For an orthogonal projector `P=P_>` and a Hermitian `K` annihilating the complementary
-subspace, finite-dimensional spectral theory identifies this greatest scalar with
-`λ_min(K|_{Ran P_>})`, which is the manuscript definition of `κ_m(ε)`. -/
-def IsKappaM (K P : QMatrix d) (κ : ℝ) : Prop :=
-  IsGreatest {μ : ℝ | ((μ : ℂ) • P) ≤ K} κ
+/-- The chosen minimum is below every eigenvalue. -/
+theorem hermitianMinEigenvalue_le_eigenvalue
+    {n : Type*} [Fintype n] [Nonempty n]
+    (A : Matrix n n ℂ) (hA : A.IsHermitian) (i : n) :
+    hermitianMinEigenvalue A hA ≤ hA.eigenvalues i := by
+  classical
+  unfold hermitianMinEigenvalue
+  exact Finset.min'_le _ _ (Finset.mem_image.mpr ⟨i, Finset.mem_univ _, rfl⟩)
 
-/-- The defining operator inequality supplied by `κ_m`. -/
-theorem IsKappaM.coercivity
-    {K P : QMatrix d} {κ : ℝ}
-    (hκm : IsKappaM K P κ) :
-    ((κ : ℂ) • P) ≤ K :=
-  hκm.1
+/-- A Hermitian matrix dominates its smallest eigenvalue times the identity. -/
+theorem hermitianMinEigenvalue_smul_one_le
+    {n : Type*} [Fintype n] [DecidableEq n] [Nonempty n]
+    (A : Matrix n n ℂ) (hA : A.IsHermitian) :
+    ((hermitianMinEigenvalue A hA : ℂ) • (1 : Matrix n n ℂ)) ≤ A := by
+  classical
+  rw [Matrix.le_iff]
+  let U : Matrix n n ℂ := hA.eigenvectorUnitary
+  let κ : ℝ := hermitianMinEigenvalue A hA
+  let Λ : Matrix n n ℂ := Matrix.diagonal (fun i => ((hA.eigenvalues i - κ : ℝ) : ℂ))
+  have hdiag : Λ.PosSemidef := by
+    apply Matrix.PosSemidef.diagonal
+    intro i
+    exact_mod_cast sub_nonneg.mpr (hermitianMinEigenvalue_le_eigenvalue A hA i)
+  have hconj : (U * Λ * Uᴴ).PosSemidef := hdiag.mul_mul_conjTranspose_same U
+  have hscalar : U * ((κ : ℂ) • (1 : Matrix n n ℂ)) * Uᴴ =
+      (κ : ℂ) • (1 : Matrix n n ℂ) := by
+    change (hA.eigenvectorUnitary : Matrix n n ℂ) *
+        ((κ : ℂ) • (1 : Matrix n n ℂ)) *
+        (hA.eigenvectorUnitary : Matrix n n ℂ)ᴴ =
+      (κ : ℂ) • (1 : Matrix n n ℂ)
+    simp [Matrix.mul_smul, Matrix.smul_mul]
+  have hspec : A = U * Matrix.diagonal (fun i => (hA.eigenvalues i : ℂ)) * Uᴴ := by
+    rw [hA.spectral_theorem]
+    simp [U, Unitary.conjStarAlgAut_apply]
+  have hdiagsub :
+      Matrix.diagonal (fun i => (hA.eigenvalues i : ℂ)) -
+          ((κ : ℂ) • (1 : Matrix n n ℂ)) = Λ := by
+    ext i j
+    by_cases hij : i = j
+    · subst j
+      simp [Λ, κ]
+    · simp [Λ, hij]
+  have heq : A - ((κ : ℂ) • (1 : Matrix n n ℂ)) = U * Λ * Uᴴ := by
+    rw [hspec, ← hscalar, ← Matrix.mul_sub, ← Matrix.sub_mul, hdiagsub]
+  rw [heq]
+  exact hconj
 
-/-- Maximality of the operator coercivity constant. -/
-theorem IsKappaM.maximal
-    {K P : QMatrix d} {κ μ : ℝ}
-    (hκm : IsKappaM K P κ)
-    (hμ : ((μ : ℂ) • P) ≤ K) :
-    μ ≤ κ :=
-  hκm.2 hμ
+/-- Compression of a Lyapunov operator to an explicitly supplied orthonormal frame for
+`Ran P`. -/
+def restrictedLyapunov
+    (K : QMatrix d) (U : Matrix (Fin d) (Fin (r + 1)) ℂ) :
+    Matrix (Fin (r + 1)) (Fin (r + 1)) ℂ := Uᴴ * K * U
 
-/-- The operator coercivity constant, if it exists, is unique. -/
-theorem IsKappaM.unique
-    {K P : QMatrix d} {κ κ' : ℝ}
-    (hκ : IsKappaM K P κ)
-    (hκ' : IsKappaM K P κ') :
-    κ = κ' := by
-  exact le_antisymm (hκ'.maximal hκ.coercivity) (hκ.maximal hκ'.coercivity)
+/-- Manuscript coercivity constant `κ_m`: the minimum eigenvalue of the compression
+of `K_m` to the excited sector. -/
+def kappaRestricted
+    (K : QMatrix d) (U : Matrix (Fin d) (Fin (r + 1)) ℂ)
+    (hK : K.IsHermitian) : ℝ :=
+  hermitianMinEigenvalue (restrictedLyapunov K U)
+    (Matrix.isHermitian_conjTranspose_mul_mul U hK)
 
-/-- Pointwise trace coercivity using the actual operator coercivity constant. -/
-theorem realTracePair_kappaM
-    {K P ρ : QMatrix d} {κm : ℝ}
-    (hκm : IsKappaM K P κm)
-    (hρ : ρ.PosSemidef) :
-    κm * realTracePair P ρ ≤ realTracePair K ρ :=
-  realTracePair_coercivity hκm.coercivity hρ
+/-- The minimum-eigenvalue definition gives the exact Loewner coercivity inequality
+`K ≥ κ_m P` whenever the columns of `U` span `Ran P` and `K` is supported there. -/
+theorem kappaRestricted_smul_projector_le
+    (P K : QMatrix d) (U : Matrix (Fin d) (Fin (r + 1)) ℂ)
+    (hK : K.IsHermitian)
+    (hUstarU : Uᴴ * U = 1)
+    (hUUstar : U * Uᴴ = P)
+    (hKU : P * K * P = K) :
+    ((kappaRestricted K U hK : ℂ) • P) ≤ K := by
+  classical
+  let Kc := restrictedLyapunov K U
+  have hKc : Kc.IsHermitian := Matrix.isHermitian_conjTranspose_mul_mul U hK
+  have hc : ((kappaRestricted K U hK : ℂ) •
+      (1 : Matrix (Fin (r + 1)) (Fin (r + 1)) ℂ)) ≤ Kc := by
+    simpa [kappaRestricted, Kc] using hermitianMinEigenvalue_smul_one_le Kc hKc
+  rw [Matrix.le_iff] at hc ⊢
+  have hconj :
+      (U * (Kc - ((kappaRestricted K U hK : ℂ) •
+        (1 : Matrix (Fin (r + 1)) (Fin (r + 1)) ℂ))) * Uᴴ).PosSemidef :=
+    hc.conjTranspose_mul_mul_same Uᴴ
+  have hleft :
+      U * (((kappaRestricted K U hK : ℂ) •
+        (1 : Matrix (Fin (r + 1)) (Fin (r + 1)) ℂ))) * Uᴴ =
+        (kappaRestricted K U hK : ℂ) • P := by
+    rw [Matrix.mul_smul, Matrix.smul_mul, Matrix.mul_one, hUUstar]
+  have hright : U * Kc * Uᴴ = K := by
+    simp only [Kc, restrictedLyapunov]
+    calc
+      U * (Uᴴ * K * U) * Uᴴ = (U * Uᴴ) * K * (U * Uᴴ) := by
+        simp [Matrix.mul_assoc]
+      _ = P * K * P := by rw [hUUstar]
+      _ = K := hKU
+  rw [Matrix.mul_sub, Matrix.sub_mul, hright, hleft] at hconj
+  exact hconj
 
-/-- Dynamical `1/t` theorem with the manuscript coercivity constant wired into the
-operator statement.
-
-Compared with `gapFree_one_over_t_of_gkls`, the scalar rate is no longer accompanied by an
-independent coercivity hypothesis.  `hκm : IsKappaM K P κm` says precisely that `κm` is the
-greatest Loewner lower bound of the actual Lyapunov operator `K` on `P`.
--/
-theorem gapFree_one_over_t_of_gkls_kappaM
+/-- End-to-end `1/t` bound with the abstract scalar `κ` replaced by the actual minimum
+eigenvalue of `K` on the excited sector. -/
+theorem gapFree_one_over_t_of_gkls_kappaRestricted
     {ι : Type*} [Fintype ι]
     {G H P K : QMatrix d} {J : ι → QMatrix d} {ρ : ℝ → QMatrix d}
-    {κm W Emin t : ℝ}
-    (hκm_pos : 0 < κm) (ht : 0 < t)
-    (hκm : IsKappaM K P κm)
+    (U : Matrix (Fin d) (Fin (r + 1)) ℂ)
+    {W Emin t : ℝ}
+    (hK : K.IsHermitian)
+    (hUstarU : Uᴴ * U = 1)
+    (hUUstar : U * Uᴴ = P)
+    (hKU : P * K * P = K)
+    (hκ : 0 < kappaRestricted K U hK)
+    (ht : 0 < t)
     (htraj : IsGKLSTrajectory G J ρ)
     (hpos : IsPositiveTrajectory ρ)
     (hP : P.PosSemidef)
@@ -84,9 +143,10 @@ theorem gapFree_one_over_t_of_gkls_kappaM
     (hHadj : fullHeisenbergAdjoint G J H = -K)
     (hfloor : Emin ≤ realTracePair H (ρ t))
     (hwidth : realTracePair H (ρ 0) - Emin ≤ W) :
-    realTracePair P (ρ t) ≤ W / (κm * t) := by
-  exact gapFree_one_over_t_of_gkls hκm_pos ht htraj hpos hP hPadj
-    hκm.coercivity hHadj hfloor hwidth
+    realTracePair P (ρ t) ≤ W / (kappaRestricted K U hK * t) := by
+  exact gapFree_one_over_t_of_gkls hκ ht htraj hpos hP hPadj
+    (kappaRestricted_smul_projector_le P K U hK hUstarU hUUstar hKU)
+    hHadj hfloor hwidth
 
 end
 
