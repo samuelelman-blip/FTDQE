@@ -43,6 +43,7 @@ theorem kernelGramOperator_factor
   simp_rw [Matrix.conjTranspose_sum, Matrix.conjTranspose_smul]
   rw [Finset.sum_mul]
   simp_rw [Finset.mul_sum]
+  rw [Finset.sum_comm]
   apply Finset.sum_congr rfl
   intro i hi
   apply Finset.sum_congr rfl
@@ -74,7 +75,9 @@ theorem correlatedAdjoint_eq_neg_kernelGramOperator
     correlatedAdjoint (fun i j => C i j) A H = - kernelGramOperator D A := by
   rw [correlatedAdjoint_energy (fun i j => C i j) hH hA]
   simp_rw [hcoeff]
-  simp [kernelGramOperator, Finset.sum_neg_distrib, ← neg_smul]
+  rw [kernelGramOperator]
+  simp_rw [neg_smul]
+  simp only [Finset.sum_neg_distrib]
 
 /-- Abstract exact Lyapunov theorem. -/
 theorem correlatedAdjoint_nonpos_of_driftKernel_posSemidef
