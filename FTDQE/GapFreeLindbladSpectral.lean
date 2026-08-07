@@ -51,10 +51,8 @@ theorem bohr_mul_hasEnergy
     _ = A * ((E : ℂ) • P) + (ω : ℂ) • (A * P) := by rw [hP]
     _ = ((E : ℂ) + (ω : ℂ)) • (A * P) := by
       simp [← add_smul]
-    _ = (E + ω : ℝ) • (A * P) := by
-      rw [add_smul, ← ofReal_smul_qMatrix E, ← ofReal_smul_qMatrix ω]
     _ = ((E + ω : ℝ) : ℂ) • (A * P) := by
-      exact (ofReal_smul_qMatrix (E + ω) (A * P)).symm
+      rw [Complex.ofReal_add]
 
 /-- A downward component lowering by at least `ε` annihilates every source energy sector lying
 strictly below `E₀+ε`.  No lower bound on a spectral gap or on a Bohr-frequency separation is used. -/
