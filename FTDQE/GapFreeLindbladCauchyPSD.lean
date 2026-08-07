@@ -25,17 +25,20 @@ def halfLineExp (ω : ℝ) : ℝ → ℂ := fun s => (Real.exp (ω * s) : ℂ)
 /-- Negative exponential rates define square-integrable functions on `(0,∞)`. -/
 theorem halfLineExp_memLp_two {ω : ℝ} (hω : ω < 0) :
     MemLp (halfLineExp ω) 2 (Measure.restrict volume (Ioi 0)) := by
-  have hmeas :
-      AEStronglyMeasurable (halfLineExp ω) (Measure.restrict volume (Ioi 0)) := by
-    apply Continuous.aestronglyMeasurable
+  have hcont : Continuous (halfLineExp ω) := by
+    unfold halfLineExp
     fun_prop
+  have hmeas :
+      AEStronglyMeasurable (halfLineExp ω) (Measure.restrict volume (Ioi 0)) :=
+    hcont.aestronglyMeasurable
   rw [memLp_two_iff_integrable_sq_norm hmeas]
   change IntegrableOn (fun s : ℝ => ‖halfLineExp ω s‖ ^ 2) (Ioi 0)
   have hfun :
       (fun s : ℝ => ‖halfLineExp ω s‖ ^ 2) =
         (fun s : ℝ => Real.exp ((2 * ω) * s)) := by
     funext s
-    simp only [halfLineExp, Complex.norm_real, abs_of_pos (Real.exp_pos _), pow_two]
+    simp only [halfLineExp, Complex.norm_real, Real.norm_eq_abs,
+      abs_of_pos (Real.exp_pos _), pow_two]
     rw [← Real.exp_add]
     congr 1
     ring
@@ -44,7 +47,7 @@ theorem halfLineExp_memLp_two {ω : ℝ} (hω : ω < 0) :
 
 /-- The corresponding `L²` vector. -/
 def halfLineExpLp (ω : ℝ) (hω : ω < 0) :
-    Lp ℂ 2 (Measure.restrict volume (Ioi 0)) :=
+    ℝ →₂[(Measure.restrict volume (Ioi 0))] ℂ :=
   (halfLineExp_memLp_two hω).toLp (halfLineExp ω)
 
 /-- Inner products of the exponential `L²` vectors give the Cauchy denominator exactly. -/
@@ -54,17 +57,12 @@ theorem inner_halfLineExpLp {ω ω' : ℝ} (hω : ω < 0) (hω' : ω' < 0) :
   rw [MeasureTheory.L2.inner_def]
   have hcoeω := MemLp.coeFn_toLp (halfLineExp_memLp_two hω)
   have hcoeω' := MemLp.coeFn_toLp (halfLineExp_memLp_two hω')
-  rw [integral_congr_ae]
-  · rw [MeasureTheory.integral_restrict measurableSet_Ioi]
-    have hsum : ω + ω' < 0 := by linarith
-    have hint := integral_exp_mul_complex_Ioi
-      (a := ((ω + ω' : ℝ) : ℂ)) (by simpa using hsum) 0
-    simpa [halfLineExp, Complex.inner_apply, Complex.ofReal_add,
-      ← Complex.ofReal_mul, add_mul] using hint
-  · filter_upwards [hcoeω, hcoeω'] with s hs hs'
-    simp [hs, hs', halfLineExp, Complex.inner_apply, ← Complex.ofReal_mul, ← Real.exp_add]
-    congr 2
-    ring
+  apply integral_congr_ae
+  filter_upwards [hcoeω, hcoeω'] with s hs hs'
+  simp only [hs, hs', halfLineExp, Complex.inner_apply, starRingEnd_apply,
+    map_real, Complex.ofReal_mul, ← Real.exp_add]
+  congr 2
+  ring
 
 section Finite
 
@@ -79,7 +77,7 @@ pairwise frequency separations. -/
 theorem cauchyFrequencyMatrix_posSemidef
     (ω : ι → ℝ) (hω : ∀ i, ω i < 0) :
     (cauchyFrequencyMatrix ω).PosSemidef := by
-  let v : ι → Lp ℂ 2 (Measure.restrict volume (Ioi 0)) :=
+  let v : ι → (ℝ →₂[(Measure.restrict volume (Ioi 0))] ℂ) :=
     fun i => halfLineExpLp (ω i) (hω i)
   apply posSemidef_of_gram_entries (cauchyFrequencyMatrix ω) v
   intro i j
@@ -91,7 +89,8 @@ theorem constantKernelMatrix_posSemidef
     {ε : ℝ} (hε : 0 ≤ ε) (ω : ι → ℝ) (hω : ∀ i, ω i < 0) :
     (constantKernelMatrix ε ω).PosSemidef := by
   have hC := cauchyFrequencyMatrix_posSemidef ω hω
-  have hscale : (0 : ℂ) ≤ ((2 * ε : ℝ) : ℂ) := by exact_mod_cast (mul_nonneg (by norm_num) hε)
+  have hscale : (0 : ℂ) ≤ ((2 * ε : ℝ) : ℂ) := by
+    exact_mod_cast (mul_nonneg (by norm_num) hε)
   have hs := hC.smul hscale
   convert hs using 1
   ext i j
