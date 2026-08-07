@@ -50,6 +50,21 @@ def halfLineExpLp (ω : ℝ) (hω : ω < 0) :
     ℝ →₂[(Measure.restrict volume (Ioi 0))] ℂ :=
   (halfLineExp_memLp_two hω).toLp (halfLineExp ω)
 
+/-- Pointwise scalar inner product of the real exponential embeddings. -/
+theorem inner_halfLineExp_pointwise (ω ω' s : ℝ) :
+    ⟪halfLineExp ω s, halfLineExp ω' s⟫_ℂ =
+      Complex.exp (((ω + ω' : ℝ) : ℂ) * (s : ℂ)) := by
+  change star ((Real.exp (ω * s) : ℂ)) * (Real.exp (ω' * s) : ℂ) = _
+  rw [show star ((Real.exp (ω * s) : ℂ)) = (Real.exp (ω * s) : ℂ) by simp]
+  rw [← Complex.ofReal_mul, ← Real.exp_add]
+  have harg :
+      (((ω + ω' : ℝ) : ℂ) * (s : ℂ)) = (((ω + ω') * s : ℝ) : ℂ) := by
+    norm_num
+  rw [harg, ← Complex.ofReal_exp]
+  norm_cast
+  congr 1
+  ring
+
 /-- Inner products of the exponential `L²` vectors give the Cauchy denominator exactly. -/
 theorem inner_halfLineExpLp {ω ω' : ℝ} (hω : ω < 0) (hω' : ω' < 0) :
     ⟪halfLineExpLp ω hω, halfLineExpLp ω' hω'⟫_ℂ =
@@ -68,24 +83,20 @@ theorem inner_halfLineExpLp {ω ω' : ℝ} (hω : ω < 0) (hω' : ω' < 0) :
         ⟪(halfLineExpLp ω hω : ℝ → ℂ) s,
           (halfLineExpLp ω' hω' : ℝ → ℂ) s⟫_ℂ) =ᵐ[
             Measure.restrict volume (Ioi 0)]
-        (fun s : ℝ => Complex.exp (((ω + ω' : ℝ) : ℂ) * s)) := by
+        (fun s : ℝ => Complex.exp (((ω + ω' : ℝ) : ℂ) * (s : ℂ))) := by
     filter_upwards [hcoeω, hcoeω'] with s hs hs'
     rw [hs, hs']
-    simp only [halfLineExp, Complex.inner_apply, starRingEnd_apply, map_real]
-    rw [← Complex.ofReal_mul, ← Complex.ofReal_mul, ← Complex.ofReal_add]
-    simp only [Complex.ofReal_exp]
-    rw [← Complex.exp_add]
-    congr 2
-    ring
+    exact inner_halfLineExp_pointwise ω ω' s
   rw [integral_congr_ae hcongr]
-  change (∫ s : ℝ in Ioi 0, Complex.exp (((ω + ω' : ℝ) : ℂ) * s)) =
-    ((1 / (-(ω + ω')) : ℝ) : ℂ)
+  rw [MeasureTheory.integral_restrict measurableSet_Ioi]
   have hsum : ω + ω' < 0 := by linarith
   rw [integral_exp_mul_complex_Ioi (a := ((ω + ω' : ℝ) : ℂ)) (by simpa using hsum) 0]
   simp only [mul_zero, Complex.exp_zero]
-  norm_cast
   have hne : ω + ω' ≠ 0 := ne_of_lt hsum
-  field_simp
+  rw [show -((1 : ℂ) / ((ω + ω' : ℝ) : ℂ)) =
+      (((1 / (-(ω + ω')) : ℝ) : ℂ)) by
+    rw [Complex.ofReal_div, Complex.ofReal_one, Complex.ofReal_neg]
+    field_simp]
 
 section Finite
 
