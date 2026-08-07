@@ -125,7 +125,8 @@ theorem constantKernelMatrix_eq_smul_cauchy
   simp [constantKernelMatrix, constantKernel, cauchyFrequencyMatrix,
     Matrix.smul_apply, div_eq_mul_inv]
   have hden :
-      -(ω j : ℂ) - (ω i : ℂ) = -((ω j : ℂ) + (ω i : ℂ)) := by ring
+      (-(ω j : ℂ) + -(ω i : ℂ)) =
+        -((ω i : ℂ) + (ω j : ℂ)) := by ring
   rw [hden, inv_neg]
   ring
 
