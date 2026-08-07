@@ -36,3 +36,4 @@ import FTDQE.GapFreeLindbladCauchyPSD
 import FTDQE.GapFreeLindbladM1
 import FTDQE.GapFreeLindbladNearDegeneracy
 import FTDQE.GapFreeLindbladVandermonde
+import FTDQE.GapFreeLindbladDynamics
