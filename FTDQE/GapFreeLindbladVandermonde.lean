@@ -26,7 +26,7 @@ theorem complex_ofReal_injective_comp {ω : Fin n → ℝ}
     Function.Injective (fun i => (ω i : ℂ)) := by
   intro i j hij
   apply hω
-  exact_mod_cast hij
+  exact Complex.ofReal_injective hij
 
 /-- Matrix-valued Vandermonde separation.
 
