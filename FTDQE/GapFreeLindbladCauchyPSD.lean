@@ -2,6 +2,15 @@ import FTDQE.GapFreeLindbladKernelGram
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.MeasureTheory.Function.L2Space
 
+/-!
+# Positivity of the downward Cauchy Kossakowski kernel
+
+For negative frequencies, the complex Cauchy matrix
+`-1 / ((ωᵢ : ℂ) + (ωⱼ : ℂ))` is the Gram matrix of the functions
+`s ↦ exp(ωᵢ s)` in `L²((0,∞))`.  This proves positive semidefiniteness without any
+frequency-separation lower bound.
+-/
+
 namespace FTDQE
 namespace GapFreeLindblad
 
@@ -63,9 +72,10 @@ theorem inner_halfLineExp_pointwise (ω ω' s : ℝ) :
   congr 2
   ring
 
+/-- The scalar `L²` inner product is exactly the complex Cauchy denominator. -/
 theorem inner_halfLineExpLp {ω ω' : ℝ} (hω : ω < 0) (hω' : ω' < 0) :
     ⟪halfLineExpLp ω hω, halfLineExpLp ω' hω'⟫_ℂ =
-      ((1 / (-(ω + ω')) : ℝ) : ℂ) := by
+      -1 / (((ω : ℂ) + (ω' : ℂ))) := by
   rw [MeasureTheory.L2.inner_def]
   have hcoeω :
       ((halfLineExpLp ω hω : ℝ → ℂ)) =ᵐ[
@@ -86,21 +96,17 @@ theorem inner_halfLineExpLp {ω ω' : ℝ} (hω : ω < 0) (hω' : ω' < 0) :
     exact inner_halfLineExp_pointwise ω ω' s
   rw [integral_congr_ae hcongr]
   have hsum : ω + ω' < 0 := by linarith
-  have hne : ω + ω' ≠ 0 := ne_of_lt hsum
   have hformula := integral_exp_mul_complex_Ioi
     (a := ((ω + ω' : ℝ) : ℂ)) (by simpa using hsum) 0
-  rw [hformula]
-  simp only [mul_zero, Complex.exp_zero]
-  rw [Complex.ofReal_div, Complex.ofReal_one, Complex.ofReal_neg]
-  have hnec : ((ω + ω' : ℝ) : ℂ) ≠ 0 := by exact_mod_cast hne
-  field_simp [hnec]
+  simpa [Complex.ofReal_add] using hformula
 
 section Finite
 
 variable {ι : Type*} [Finite ι]
 
+/-- Complex Cauchy matrix represented by the `L²` Gram construction. -/
 def cauchyFrequencyMatrix (ω : ι → ℝ) : Matrix ι ι ℂ :=
-  fun i j => ((1 / (-(ω i + ω j)) : ℝ) : ℂ)
+  fun i j => -1 / (((ω i : ℂ) + (ω j : ℂ)))
 
 theorem cauchyFrequencyMatrix_posSemidef
     (ω : ι → ℝ) (hω : ∀ i, ω i < 0) :
@@ -111,17 +117,23 @@ theorem cauchyFrequencyMatrix_posSemidef
   intro i j
   exact (inner_halfLineExpLp (hω i) (hω j)).symm
 
+/-- The real constant kernel is a nonnegative scalar multiple of the complex Cauchy Gram matrix. -/
+theorem constantKernelMatrix_eq_smul_cauchy
+    (ε : ℝ) (ω : ι → ℝ) :
+    constantKernelMatrix ε ω = ((2 * ε : ℝ) : ℂ) • cauchyFrequencyMatrix ω := by
+  ext i j
+  simp [constantKernelMatrix, constantKernel, cauchyFrequencyMatrix,
+    Matrix.smul_apply, div_eq_mul_inv]
+  ring
+
 theorem constantKernelMatrix_posSemidef
     {ε : ℝ} (hε : 0 ≤ ε) (ω : ι → ℝ) (hω : ∀ i, ω i < 0) :
     (constantKernelMatrix ε ω).PosSemidef := by
+  rw [constantKernelMatrix_eq_smul_cauchy]
   have hC := cauchyFrequencyMatrix_posSemidef ω hω
   have hscale : (0 : ℂ) ≤ ((2 * ε : ℝ) : ℂ) := by
     exact_mod_cast (mul_nonneg (by norm_num) hε)
-  have hs := hC.smul hscale
-  convert hs using 1
-  ext i j
-  simp [constantKernelMatrix, constantKernel, cauchyFrequencyMatrix,
-    Matrix.smul_apply, div_eq_mul_inv, mul_assoc]
+  exact hC.smul hscale
 
 theorem linearKernelMatrix_posSemidef
     {ε : ℝ} (hε : 0 ≤ ε) (ω : ι → ℝ) (hω : ∀ i, ω i < 0) :
