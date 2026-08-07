@@ -28,7 +28,7 @@ theorem nearDeg_cauchy_det
       δ ^ 2 / (4 * Ω * (Ω + δ) * (2 * Ω + δ) ^ 2) := by
   simp [nearDegA, nearDegB, nearDegD]
   field_simp
-  ring
+  ring_nf
 
 /-- Including the common factor `2 γ ε²` reproduces the manuscript determinant exactly. -/
 theorem nearDeg_m1_det
