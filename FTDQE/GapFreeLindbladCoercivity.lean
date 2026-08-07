@@ -23,13 +23,13 @@ variable {d r : ℕ}
 
 /-- Minimum eigenvalue of a nonempty finite-dimensional Hermitian matrix. -/
 def hermitianMinEigenvalue
-    {n : Type*} [Fintype n] [Nonempty n]
+    {n : Type*} [Fintype n] [DecidableEq n] [Nonempty n]
     (A : Matrix n n ℂ) (hA : A.IsHermitian) : ℝ :=
   Finset.min' (Finset.univ.image hA.eigenvalues) (by simp)
 
 /-- The chosen minimum is below every eigenvalue. -/
 theorem hermitianMinEigenvalue_le_eigenvalue
-    {n : Type*} [Fintype n] [Nonempty n]
+    {n : Type*} [Fintype n] [DecidableEq n] [Nonempty n]
     (A : Matrix n n ℂ) (hA : A.IsHermitian) (i : n) :
     hermitianMinEigenvalue A hA ≤ hA.eigenvalues i := by
   classical
@@ -51,16 +51,17 @@ theorem hermitianMinEigenvalue_smul_one_le
     intro i
     exact_mod_cast sub_nonneg.mpr (hermitianMinEigenvalue_le_eigenvalue A hA i)
   have hconj : (U * Λ * Uᴴ).PosSemidef := hdiag.mul_mul_conjTranspose_same U
+  have hunit : U * Uᴴ = (1 : Matrix n n ℂ) := by
+    simpa [U, star_eq_conjTranspose] using
+      (Unitary.mul_star_self hA.eigenvectorUnitary)
   have hscalar : U * ((κ : ℂ) • (1 : Matrix n n ℂ)) * Uᴴ =
       (κ : ℂ) • (1 : Matrix n n ℂ) := by
-    change (hA.eigenvectorUnitary : Matrix n n ℂ) *
-        ((κ : ℂ) • (1 : Matrix n n ℂ)) *
-        (hA.eigenvectorUnitary : Matrix n n ℂ)ᴴ =
-      (κ : ℂ) • (1 : Matrix n n ℂ)
-    simp [Matrix.mul_smul, Matrix.smul_mul]
+    calc
+      U * ((κ : ℂ) • (1 : Matrix n n ℂ)) * Uᴴ =
+          (κ : ℂ) • (U * Uᴴ) := by simp [Matrix.mul_assoc]
+      _ = (κ : ℂ) • (1 : Matrix n n ℂ) := by rw [hunit]
   have hspec : A = U * Matrix.diagonal (fun i => (hA.eigenvalues i : ℂ)) * Uᴴ := by
-    rw [hA.spectral_theorem]
-    simp [U, Unitary.conjStarAlgAut_apply]
+    simpa [U, Unitary.conjStarAlgAut_apply] using hA.spectral_theorem
   have hdiagsub :
       Matrix.diagonal (fun i => (hA.eigenvalues i : ℂ)) -
           ((κ : ℂ) • (1 : Matrix n n ℂ)) = Λ := by
@@ -70,7 +71,17 @@ theorem hermitianMinEigenvalue_smul_one_le
       simp [Λ, κ]
     · simp [Λ, hij]
   have heq : A - ((κ : ℂ) • (1 : Matrix n n ℂ)) = U * Λ * Uᴴ := by
-    rw [hspec, ← hscalar, ← Matrix.mul_sub, ← Matrix.sub_mul, hdiagsub]
+    calc
+      A - ((κ : ℂ) • (1 : Matrix n n ℂ)) =
+          (U * Matrix.diagonal (fun i => (hA.eigenvalues i : ℂ))) * Uᴴ -
+            U * ((κ : ℂ) • (1 : Matrix n n ℂ)) * Uᴴ := by rw [hspec, hscalar]
+      _ = (U * Matrix.diagonal (fun i => (hA.eigenvalues i : ℂ)) -
+            U * ((κ : ℂ) • (1 : Matrix n n ℂ))) * Uᴴ := by
+              rw [Matrix.sub_mul]
+      _ = U * (Matrix.diagonal (fun i => (hA.eigenvalues i : ℂ)) -
+            ((κ : ℂ) • (1 : Matrix n n ℂ))) * Uᴴ := by
+              rw [Matrix.mul_sub]
+      _ = U * Λ * Uᴴ := by rw [hdiagsub]
   rw [heq]
   exact hconj
 
@@ -107,12 +118,16 @@ theorem kappaRestricted_smul_projector_le
   have hconj :
       (U * (Kc - ((kappaRestricted K U hK : ℂ) •
         (1 : Matrix (Fin (r + 1)) (Fin (r + 1)) ℂ))) * Uᴴ).PosSemidef :=
-    hc.conjTranspose_mul_mul_same Uᴴ
+    hc.mul_mul_conjTranspose_same U
   have hleft :
       U * (((kappaRestricted K U hK : ℂ) •
         (1 : Matrix (Fin (r + 1)) (Fin (r + 1)) ℂ))) * Uᴴ =
         (kappaRestricted K U hK : ℂ) • P := by
-    rw [Matrix.mul_smul, Matrix.smul_mul, Matrix.mul_one, hUUstar]
+    calc
+      U * (((kappaRestricted K U hK : ℂ) •
+          (1 : Matrix (Fin (r + 1)) (Fin (r + 1)) ℂ))) * Uᴴ =
+          (kappaRestricted K U hK : ℂ) • (U * Uᴴ) := by simp [Matrix.mul_assoc]
+      _ = (kappaRestricted K U hK : ℂ) • P := by rw [hUUstar]
   have hright : U * Kc * Uᴴ = K := by
     simp only [Kc, restrictedLyapunov]
     calc
@@ -120,7 +135,22 @@ theorem kappaRestricted_smul_projector_le
         simp [Matrix.mul_assoc]
       _ = P * K * P := by rw [hUUstar]
       _ = K := hKU
-  rw [Matrix.mul_sub, Matrix.sub_mul, hright, hleft] at hconj
+  have heq :
+      U * (Kc - ((kappaRestricted K U hK : ℂ) •
+        (1 : Matrix (Fin (r + 1)) (Fin (r + 1)) ℂ))) * Uᴴ =
+        K - (kappaRestricted K U hK : ℂ) • P := by
+    calc
+      U * (Kc - ((kappaRestricted K U hK : ℂ) •
+          (1 : Matrix (Fin (r + 1)) (Fin (r + 1)) ℂ))) * Uᴴ =
+          (U * Kc - U * ((kappaRestricted K U hK : ℂ) •
+            (1 : Matrix (Fin (r + 1)) (Fin (r + 1)) ℂ))) * Uᴴ := by
+              rw [Matrix.mul_sub]
+      _ = U * Kc * Uᴴ -
+          U * (((kappaRestricted K U hK : ℂ) •
+            (1 : Matrix (Fin (r + 1)) (Fin (r + 1)) ℂ))) * Uᴴ := by
+              rw [Matrix.sub_mul]
+      _ = K - (kappaRestricted K U hK : ℂ) • P := by rw [hright, hleft]
+  rw [← heq]
   exact hconj
 
 /-- End-to-end `1/t` bound with the abstract scalar `κ` replaced by the actual minimum
