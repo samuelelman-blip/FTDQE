@@ -45,13 +45,14 @@ theorem hermitianMinEigenvalue_smul_one_le
   rw [Matrix.le_iff]
   let U : Matrix n n ℂ := hA.eigenvectorUnitary
   let κ : ℝ := hermitianMinEigenvalue A hA
+  let D : Matrix n n ℂ := Matrix.diagonal (RCLike.ofReal ∘ hA.eigenvalues)
   let Λ : Matrix n n ℂ := Matrix.diagonal (fun i => ((hA.eigenvalues i - κ : ℝ) : ℂ))
   have hdiag : Λ.PosSemidef := by
     apply Matrix.PosSemidef.diagonal
     intro i
     change (0 : ℂ) ≤ ((hA.eigenvalues i - κ : ℝ) : ℂ)
-    exact Complex.ofReal_nonneg.mpr <|
-      sub_nonneg.mpr (by simpa [κ] using hermitianMinEigenvalue_le_eigenvalue A hA i)
+    exact_mod_cast sub_nonneg.mpr
+      (by simpa [κ] using hermitianMinEigenvalue_le_eigenvalue A hA i)
   have hconj : (U * Λ * Uᴴ).PosSemidef := hdiag.mul_mul_conjTranspose_same U
   have hunit : U * Uᴴ = (1 : Matrix n n ℂ) := by
     change (hA.eigenvectorUnitary : Matrix n n ℂ) *
@@ -63,36 +64,26 @@ theorem hermitianMinEigenvalue_smul_one_le
       U * ((κ : ℂ) • (1 : Matrix n n ℂ)) * Uᴴ =
           (κ : ℂ) • (U * Uᴴ) := by simp [Matrix.mul_assoc]
       _ = (κ : ℂ) • (1 : Matrix n n ℂ) := by rw [hunit]
-  have hspec : A = U * Matrix.diagonal (fun i => (hA.eigenvalues i : ℂ)) * Uᴴ := by
-    change A = (hA.eigenvectorUnitary : Matrix n n ℂ) *
-      Matrix.diagonal (fun i => (hA.eigenvalues i : ℂ)) *
-      (hA.eigenvectorUnitary : Matrix n n ℂ)ᴴ
-    simpa only [Unitary.conjStarAlgAut_apply, Function.comp_apply] using hA.spectral_theorem
-  have hdiagsub :
-      Matrix.diagonal (fun i => (hA.eigenvalues i : ℂ)) -
-          ((κ : ℂ) • (1 : Matrix n n ℂ)) = Λ := by
+  have hspec : A = U * D * Uᴴ := by
+    simpa [U, D, Unitary.conjStarAlgAut_apply, star_eq_conjTranspose] using hA.spectral_theorem
+  have hdiagsub : D - ((κ : ℂ) • (1 : Matrix n n ℂ)) = Λ := by
     ext i j
     by_cases hij : i = j
     · subst j
-      simp [Λ, κ]
-    · simp [Λ, hij]
+      simp [D, Λ, κ, Function.comp_apply]
+    · simp [D, Λ, hij]
   have hfirst :
       A - ((κ : ℂ) • (1 : Matrix n n ℂ)) =
-        (U * Matrix.diagonal (fun i => (hA.eigenvalues i : ℂ)) * Uᴴ) -
-          ((κ : ℂ) • (1 : Matrix n n ℂ)) :=
+        (U * D * Uᴴ) - ((κ : ℂ) • (1 : Matrix n n ℂ)) :=
     congrArg (fun X : Matrix n n ℂ => X - ((κ : ℂ) • (1 : Matrix n n ℂ))) hspec
   have heq : A - ((κ : ℂ) • (1 : Matrix n n ℂ)) = U * Λ * Uᴴ := by
     calc
       A - ((κ : ℂ) • (1 : Matrix n n ℂ)) =
-          (U * Matrix.diagonal (fun i => (hA.eigenvalues i : ℂ)) * Uᴴ) -
-            ((κ : ℂ) • (1 : Matrix n n ℂ)) := hfirst
-      _ = (U * Matrix.diagonal (fun i => (hA.eigenvalues i : ℂ)) * Uᴴ) -
-            U * ((κ : ℂ) • (1 : Matrix n n ℂ)) * Uᴴ := by rw [hscalar]
-      _ = (U * Matrix.diagonal (fun i => (hA.eigenvalues i : ℂ)) -
-            U * ((κ : ℂ) • (1 : Matrix n n ℂ))) * Uᴴ := by
+          (U * D * Uᴴ) - ((κ : ℂ) • (1 : Matrix n n ℂ)) := hfirst
+      _ = (U * D * Uᴴ) - U * ((κ : ℂ) • (1 : Matrix n n ℂ)) * Uᴴ := by rw [hscalar]
+      _ = (U * D - U * ((κ : ℂ) • (1 : Matrix n n ℂ))) * Uᴴ := by
               rw [Matrix.sub_mul]
-      _ = U * (Matrix.diagonal (fun i => (hA.eigenvalues i : ℂ)) -
-            ((κ : ℂ) • (1 : Matrix n n ℂ))) * Uᴴ := by
+      _ = U * (D - ((κ : ℂ) • (1 : Matrix n n ℂ))) * Uᴴ := by
               rw [Matrix.mul_sub]
       _ = U * Λ * Uᴴ := by rw [hdiagsub]
   rw [heq]
