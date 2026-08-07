@@ -57,12 +57,27 @@ theorem inner_halfLineExpLp {ω ω' : ℝ} (hω : ω < 0) (hω' : ω' < 0) :
   rw [MeasureTheory.L2.inner_def]
   have hcoeω := MemLp.coeFn_toLp (halfLineExp_memLp_two hω)
   have hcoeω' := MemLp.coeFn_toLp (halfLineExp_memLp_two hω')
-  apply integral_congr_ae
-  filter_upwards [hcoeω, hcoeω'] with s hs hs'
-  simp only [hs, hs', halfLineExp, Complex.inner_apply, starRingEnd_apply,
-    map_real, Complex.ofReal_mul, ← Real.exp_add]
-  congr 2
-  ring
+  have hcongr :
+      (fun s : ℝ =>
+        ⟪(halfLineExpLp ω hω : ℝ → ℂ) s,
+          (halfLineExpLp ω' hω' : ℝ → ℂ) s⟫_ℂ) =ᵐ[
+            Measure.restrict volume (Ioi 0)]
+        (fun s : ℝ => Complex.exp (((ω + ω' : ℝ) : ℂ) * s)) := by
+    filter_upwards [hcoeω, hcoeω'] with s hs hs'
+    rw [hs, hs']
+    simp only [halfLineExp, Complex.inner_apply, starRingEnd_apply, map_real]
+    rw [← Complex.ofReal_mul, ← Complex.ofReal_mul, ← Complex.ofReal_add]
+    simp only [Complex.ofReal_exp]
+    rw [← Complex.exp_add]
+    congr 2
+    ring
+  rw [integral_congr_ae hcongr]
+  rw [MeasureTheory.integral_restrict measurableSet_Ioi]
+  have hsum : ω + ω' < 0 := by linarith
+  rw [integral_exp_mul_complex_Ioi (a := ((ω + ω' : ℝ) : ℂ)) (by simpa using hsum) 0]
+  simp only [mul_zero, Complex.exp_zero, neg_div, one_div]
+  rw [← Complex.ofReal_add]
+  norm_num
 
 section Finite
 
@@ -94,8 +109,8 @@ theorem constantKernelMatrix_posSemidef
   have hs := hC.smul hscale
   convert hs using 1
   ext i j
-  simp [constantKernelMatrix, constantKernel, cauchyFrequencyMatrix, Matrix.smul_apply]
-  field_simp
+  simp [constantKernelMatrix, constantKernel, cauchyFrequencyMatrix, Matrix.smul_apply,
+    div_eq_mul_inv, mul_assoc]
 
 /-- Therefore the linear-weight kernel `m₁` is positive semidefinite as well. -/
 theorem linearKernelMatrix_posSemidef
