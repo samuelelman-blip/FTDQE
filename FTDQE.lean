@@ -30,3 +30,6 @@ import FTDQE.GapFreeLindbladGKLS
 import FTDQE.GapFreeLindbladConvergence
 import FTDQE.GapFreeLindbladSpectral
 import FTDQE.GapFreeLindbladAbstractLyapunov
+import FTDQE.GapFreeLindbladKernelFamily
+import FTDQE.GapFreeLindbladKernelGram
+import FTDQE.GapFreeLindbladCauchyPSD
