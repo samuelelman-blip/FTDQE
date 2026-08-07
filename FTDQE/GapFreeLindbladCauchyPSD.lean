@@ -55,8 +55,14 @@ theorem inner_halfLineExpLp {ω ω' : ℝ} (hω : ω < 0) (hω' : ω' < 0) :
     ⟪halfLineExpLp ω hω, halfLineExpLp ω' hω'⟫_ℂ =
       ((1 / (-(ω + ω')) : ℝ) : ℂ) := by
   rw [MeasureTheory.L2.inner_def]
-  have hcoeω := MemLp.coeFn_toLp (halfLineExp_memLp_two hω)
-  have hcoeω' := MemLp.coeFn_toLp (halfLineExp_memLp_two hω')
+  have hcoeω :
+      ((halfLineExpLp ω hω : ℝ → ℂ)) =ᵐ[
+        Measure.restrict volume (Ioi 0)] halfLineExp ω := by
+    simpa [halfLineExpLp] using MemLp.coeFn_toLp (halfLineExp_memLp_two hω)
+  have hcoeω' :
+      ((halfLineExpLp ω' hω' : ℝ → ℂ)) =ᵐ[
+        Measure.restrict volume (Ioi 0)] halfLineExp ω' := by
+    simpa [halfLineExpLp] using MemLp.coeFn_toLp (halfLineExp_memLp_two hω')
   have hcongr :
       (fun s : ℝ =>
         ⟪(halfLineExpLp ω hω : ℝ → ℂ) s,
@@ -72,12 +78,14 @@ theorem inner_halfLineExpLp {ω ω' : ℝ} (hω : ω < 0) (hω' : ω' < 0) :
     congr 2
     ring
   rw [integral_congr_ae hcongr]
-  rw [MeasureTheory.integral_restrict measurableSet_Ioi]
+  change (∫ s : ℝ in Ioi 0, Complex.exp (((ω + ω' : ℝ) : ℂ) * s)) =
+    ((1 / (-(ω + ω')) : ℝ) : ℂ)
   have hsum : ω + ω' < 0 := by linarith
   rw [integral_exp_mul_complex_Ioi (a := ((ω + ω' : ℝ) : ℂ)) (by simpa using hsum) 0]
-  simp only [mul_zero, Complex.exp_zero, neg_div, one_div]
-  rw [← Complex.ofReal_add]
-  norm_num
+  simp only [mul_zero, Complex.exp_zero]
+  norm_cast
+  have hne : ω + ω' ≠ 0 := ne_of_lt hsum
+  field_simp
 
 section Finite
 
@@ -96,7 +104,7 @@ theorem cauchyFrequencyMatrix_posSemidef
     fun i => halfLineExpLp (ω i) (hω i)
   apply posSemidef_of_gram_entries (cauchyFrequencyMatrix ω) v
   intro i j
-  exact inner_halfLineExpLp (hω i) (hω j)
+  exact (inner_halfLineExpLp (hω i) (hω j)).symm
 
 /-- The manuscript's constant kernel `2 ε / (-(ωᵢ+ωⱼ))` is positive semidefinite for
 `ε ≥ 0` and strictly downward frequencies. -/
