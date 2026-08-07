@@ -18,6 +18,13 @@ noncomputable section
 
 variable {d : ℕ}
 
+/-- Scalar multiplication of a complex matrix by a real number agrees with multiplication by
+its complex embedding. -/
+theorem ofReal_smul_qMatrix (r : ℝ) (X : QMatrix d) :
+    (r : ℂ) • X = r • X := by
+  ext i j
+  simp [Complex.real_smul]
+
 /-- `P` has energy `E` on its range.  Idempotence is not needed for the darkness calculation,
 so the definition records only the eigenprojector relation actually used in the proof. -/
 def HasEnergy (H P : QMatrix d) (E : ℝ) : Prop :=
@@ -45,7 +52,7 @@ theorem bohr_mul_hasEnergy
     _ = ((E : ℂ) + (ω : ℂ)) • (A * P) := by
       simp [← add_smul]
     _ = ((E + ω : ℝ) : ℂ) • (A * P) := by
-      norm_num
+      rw [Complex.ofReal_add]
 
 /-- A downward component lowering by at least `ε` annihilates every source energy sector lying
 strictly below `E₀+ε`.  No lower bound on a spectral gap or on a Bohr-frequency separation is used. -/
@@ -86,30 +93,13 @@ theorem isBohrComponent_shift_iff
     (H A : QMatrix d) (ω c : ℝ) :
     IsBohrComponent (H + (c : ℂ) • (1 : QMatrix d)) A ω ↔
       IsBohrComponent H A ω := by
-  constructor
-  · intro h
-    dsimp [IsBohrComponent] at h ⊢
-    have hs :
-        H * A + (c : ℂ) • A =
-          A * H + (c : ℂ) • A + (ω : ℂ) • A := by
-      simpa [Matrix.add_mul, Matrix.mul_add] using h
-    have hs' :
-        H * A + (c : ℂ) • A =
-          (A * H + (ω : ℂ) • A) + (c : ℂ) • A := by
-      calc
-        H * A + (c : ℂ) • A =
-            A * H + (c : ℂ) • A + (ω : ℂ) • A := hs
-        _ = (A * H + (ω : ℂ) • A) + (c : ℂ) • A := by abel
-    exact add_right_cancel hs'
-  · intro h
-    dsimp [IsBohrComponent] at h ⊢
-    calc
-      (H + (c : ℂ) • (1 : QMatrix d)) * A =
-          H * A + (c : ℂ) • A := by simp [Matrix.add_mul]
-      _ = (A * H + (ω : ℂ) • A) + (c : ℂ) • A := by rw [h]
-      _ = A * H + (c : ℂ) • A + (ω : ℂ) • A := by abel
-      _ = A * (H + (c : ℂ) • (1 : QMatrix d)) + (ω : ℂ) • A := by
-        simp [Matrix.mul_add]
+  constructor <;> intro h
+  · dsimp [IsBohrComponent] at h ⊢
+    simp [Matrix.add_mul, Matrix.mul_add, ofReal_smul_qMatrix] at h ⊢
+    module at h ⊢
+  · dsimp [IsBohrComponent] at h ⊢
+    simp [Matrix.add_mul, Matrix.mul_add, ofReal_smul_qMatrix] at h ⊢
+    module at h ⊢
 
 end
 
