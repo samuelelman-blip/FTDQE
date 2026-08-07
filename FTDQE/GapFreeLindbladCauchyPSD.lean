@@ -17,9 +17,11 @@ theorem complex_inner_ofReal (x y : ℝ) :
   calc
     ⟪(x : ℂ), (y : ℂ)⟫_ℂ =
         ⟪(x : ℂ) • (1 : ℂ), (y : ℂ) • (1 : ℂ)⟫_ℂ := by simp
-    _ = star (x : ℂ) * ⟪(1 : ℂ), (y : ℂ) • (1 : ℂ)⟫_ℂ := by
+    _ = (starRingEnd ℂ) (x : ℂ) *
+        ⟪(1 : ℂ), (y : ℂ) • (1 : ℂ)⟫_ℂ := by
       rw [inner_smul_left]
-    _ = star (x : ℂ) * ((y : ℂ) * ⟪(1 : ℂ), (1 : ℂ)⟫_ℂ) := by
+    _ = (starRingEnd ℂ) (x : ℂ) *
+        ((y : ℂ) * ⟪(1 : ℂ), (1 : ℂ)⟫_ℂ) := by
       rw [inner_smul_right]
     _ = ((x * y : ℝ) : ℂ) := by simp
 
@@ -88,15 +90,11 @@ theorem inner_halfLineExpLp {ω ω' : ℝ} (hω : ω < 0) (hω' : ω' < 0) :
   have hne : ω + ω' ≠ 0 := ne_of_lt hsum
   have hformula := integral_exp_mul_complex_Ioi
     (a := ((ω + ω' : ℝ) : ℂ)) (by simpa using hsum) 0
-  calc
-    (∫ s : ℝ in Ioi 0, Complex.exp (((ω + ω' : ℝ) : ℂ) * (s : ℂ))) =
-        -Complex.exp (((ω + ω' : ℝ) : ℂ) * (0 : ℝ)) /
-          ((ω + ω' : ℝ) : ℂ) := hformula
-    _ = -((1 : ℂ) / ((ω + ω' : ℝ) : ℂ)) := by simp
-    _ = (((1 / (-(ω + ω')) : ℝ) : ℂ)) := by
-      rw [Complex.ofReal_div, Complex.ofReal_one, Complex.ofReal_neg]
-      have hnec : ((ω + ω' : ℝ) : ℂ) ≠ 0 := by exact_mod_cast hne
-      field_simp [hnec]
+  rw [hformula]
+  simp only [mul_zero, Complex.exp_zero]
+  rw [Complex.ofReal_div, Complex.ofReal_one, Complex.ofReal_neg]
+  have hnec : ((ω + ω' : ℝ) : ℂ) ≠ 0 := by exact_mod_cast hne
+  field_simp [hnec]
 
 section Finite
 
