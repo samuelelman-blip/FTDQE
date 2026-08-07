@@ -1,4 +1,5 @@
 import FTDQE.GapFreeLindblad
+import Mathlib.Analysis.Complex.Order
 import Mathlib.Analysis.Matrix.Order
 
 /-!
