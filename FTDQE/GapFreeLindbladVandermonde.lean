@@ -4,9 +4,9 @@ import Mathlib.LinearAlgebra.Vandermonde
 /-!
 # Vandermonde separation of distinct Bohr components
 
-Finite-dimensional terminal step of the manuscript's jointly-dark argument.  If the exponential
+Finite-dimensional terminal step of the manuscript's jointly-dark argument. If the exponential
 profile has all of its first `n` moments equal to zero and the `n` frequencies are distinct, then
-each matrix-valued frequency component vanishes separately.  Only injectivity is assumed; no
+each matrix-valued frequency component vanishes separately. Only injectivity is assumed; no
 quantitative lower bound on frequency separation occurs.
 -/
 
@@ -45,8 +45,17 @@ theorem matrix_eq_zero_of_vandermonde_moments
       (∑ r : Fin n, coeff r * ((ω r : ℂ) ^ (k : ℕ))) = 0 := by
     intro k
     have hentry := congrArg (fun M : QMatrix d => M p q) (hmom k)
-    simp only [Finset.sum_apply, Matrix.smul_apply, Pi.zero_apply] at hentry
-    simpa [coeff, mul_comm] using hentry
+    have hpowCoeff :
+        (∑ r : Fin n, ((ω r : ℂ) ^ (k : ℕ)) * coeff r) = 0 := by
+      simpa only [Finset.sum_apply, Matrix.smul_apply, smul_eq_mul,
+        Matrix.zero_apply, coeff] using hentry
+    calc
+      (∑ r : Fin n, coeff r * ((ω r : ℂ) ^ (k : ℕ))) =
+          ∑ r : Fin n, ((ω r : ℂ) ^ (k : ℕ)) * coeff r := by
+            apply Finset.sum_congr rfl
+            intro r hr
+            exact mul_comm _ _
+      _ = 0 := hpowCoeff
   have hz : coeff = 0 :=
     Matrix.eq_zero_of_forall_pow_sum_mul_pow_eq_zero
       (complex_ofReal_injective_comp hω) hscalar
