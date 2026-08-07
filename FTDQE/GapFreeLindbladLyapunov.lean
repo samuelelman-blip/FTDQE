@@ -29,8 +29,11 @@ theorem doubleGramSum_eq
     (A : ι → QMatrix d) :
     (∑ i, ∑ j, (A j)ᴴ * A i) = (componentSum A)ᴴ * componentSum A := by
   classical
-  simp [componentSum, Matrix.conjTranspose_sum, Finset.sum_mul, Finset.mul_sum,
-    Finset.sum_comm]
+  rw [componentSum]
+  simp_rw [Matrix.conjTranspose_sum]
+  rw [Finset.sum_mul]
+  simp_rw [Finset.mul_sum]
+  rw [Finset.sum_comm]
 
 /-- Complex-cast version of the constant-kernel drift coefficient. -/
 theorem constantKernel_drift_factor_complex
@@ -56,9 +59,8 @@ theorem constantKernel_correlatedAdjoint_energy
   rw [correlatedAdjoint_energy
     (fun i j => ((constantKernel ε (ω i) (ω j) : ℝ) : ℂ)) hH hA]
   simp_rw [constantKernel_drift_factor_complex hε (hdown _) (hdown _)]
-  rw [← Finset.smul_sum]
-  congr 1
-  rw [doubleGramSum_eq]
+  rw [← doubleGramSum_eq A]
+  simp only [Finset.smul_sum]
 
 /-- The positive operator whose negative is the constant-kernel energy drift. -/
 def constantLyapunovOperator (ε : ℝ) (A : ι → QMatrix d) : QMatrix d :=
