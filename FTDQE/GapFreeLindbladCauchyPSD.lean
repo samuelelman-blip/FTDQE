@@ -25,15 +25,8 @@ def halfLineExp (ω : ℝ) : ℝ → ℂ := fun s => (Real.exp (ω * s) : ℂ)
 /-- Inner product of real numbers embedded in `ℂ`. -/
 theorem complex_inner_ofReal (x y : ℝ) :
     ⟪(x : ℂ), (y : ℂ)⟫_ℂ = ((x * y : ℝ) : ℂ) := by
-  calc
-    ⟪(x : ℂ), (y : ℂ)⟫_ℂ = ⟪x • (1 : ℂ), y • (1 : ℂ)⟫_ℂ := by
-      simp [Complex.real_smul]
-    _ = x • ⟪(1 : ℂ), y • (1 : ℂ)⟫_ℂ := by
-      rw [inner_smul_real_left]
-    _ = x • (y • ⟪(1 : ℂ), (1 : ℂ)⟫_ℂ) := by
-      rw [inner_smul_real_right]
-    _ = ((x * y : ℝ) : ℂ) := by
-      simp [Complex.real_smul]
+  change star (x : ℂ) * (y : ℂ) = ((x * y : ℝ) : ℂ)
+  simp
 
 /-- Negative exponential rates define square-integrable functions on `(0,∞)`. -/
 theorem halfLineExp_memLp_two {ω : ℝ} (hω : ω < 0) :
@@ -68,14 +61,16 @@ theorem inner_halfLineExp_pointwise (ω ω' s : ℝ) :
     ⟪halfLineExp ω s, halfLineExp ω' s⟫_ℂ =
       Complex.exp (((ω + ω' : ℝ) : ℂ) * (s : ℂ)) := by
   rw [halfLineExp, halfLineExp, complex_inner_ofReal]
-  rw [← Complex.ofReal_mul, ← Real.exp_add]
-  have harg :
-      (((ω + ω' : ℝ) : ℂ) * (s : ℂ)) = (((ω + ω') * s : ℝ) : ℂ) := by
-    norm_num
-  rw [harg, ← Complex.ofReal_exp]
-  norm_cast
-  congr 1
-  ring
+  have hleft :
+      ((Real.exp (ω * s) * Real.exp (ω' * s) : ℝ) : ℂ) =
+        ((Real.exp ((ω + ω') * s) : ℝ) : ℂ) := by
+    rw [← Real.exp_add]
+    congr 2
+    ring
+  rw [hleft]
+  rw [← Complex.ofReal_exp]
+  congr 2
+  norm_num
 
 /-- Inner products of the exponential `L²` vectors give the Cauchy denominator exactly. -/
 theorem inner_halfLineExpLp {ω ω' : ℝ} (hω : ω < 0) (hω' : ω' < 0) :
@@ -104,17 +99,14 @@ theorem inner_halfLineExpLp {ω ω' : ℝ} (hω : ω < 0) (hω' : ω' < 0) :
   have hformula :=
     integral_exp_mul_complex_Ioi
       (a := ((ω + ω' : ℝ) : ℂ)) (by simpa using hsum) 0
-  have hrhs :
-      -((1 : ℂ) / ((ω + ω' : ℝ) : ℂ)) =
-        (((1 / (-(ω + ω')) : ℝ) : ℂ)) := by
-    rw [Complex.ofReal_div, Complex.ofReal_one, Complex.ofReal_neg]
-    field_simp
   calc
     (∫ s : ℝ in Ioi 0, Complex.exp (((ω + ω' : ℝ) : ℂ) * (s : ℂ))) =
         -Complex.exp (((ω + ω' : ℝ) : ℂ) * (0 : ℝ)) /
           ((ω + ω' : ℝ) : ℂ) := hformula
     _ = -((1 : ℂ) / ((ω + ω' : ℝ) : ℂ)) := by simp
-    _ = (((1 / (-(ω + ω')) : ℝ) : ℂ)) := hrhs
+    _ = (((1 / (-(ω + ω')) : ℝ) : ℂ)) := by
+      rw [Complex.ofReal_div, Complex.ofReal_one, Complex.ofReal_neg]
+      ring
 
 section Finite
 
