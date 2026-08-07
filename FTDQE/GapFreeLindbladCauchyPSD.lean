@@ -124,7 +124,7 @@ theorem constantKernelMatrix_eq_smul_cauchy
   ext i j
   simp [constantKernelMatrix, constantKernel, cauchyFrequencyMatrix,
     Matrix.smul_apply, div_eq_mul_inv]
-  ring
+  ring_nf
 
 theorem constantKernelMatrix_posSemidef
     {ε : ℝ} (hε : 0 ≤ ε) (ω : ι → ℝ) (hω : ∀ i, ω i < 0) :
