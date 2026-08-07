@@ -27,30 +27,14 @@ theorem realTracePair_mono_of_le
   have hp := realTracePair_nonneg_of_posSemidef hdiff hρ
   have hlin : realTracePair (B - A) ρ =
       realTracePair B ρ - realTracePair A ρ := by
-    simp [realTracePair, Matrix.sub_mul]
+    simp [realTracePair, complexTracePair, Matrix.sub_mul]
   rw [hlin] at hp
   linarith
 
 /-- Real scalar multiplication pulls through the real trace pairing. -/
 theorem realTracePair_ofReal_smul (κ : ℝ) (A ρ : QMatrix d) :
     realTracePair ((κ : ℂ) • A) ρ = κ * realTracePair A ρ := by
-  simp [realTracePair, Matrix.smul_mul, Complex.real_smul]
-
-/-- Every GKLS ODE trajectory is continuous. -/
-theorem IsGKLSTrajectory.continuous {ι : Type*} [Fintype ι]
-    {G : QMatrix d} {J : ι → QMatrix d} {ρ : ℝ → QMatrix d}
-    (hρ : IsGKLSTrajectory G J ρ) : Continuous ρ := by
-  rw [continuous_iff_continuousAt]
-  intro t
-  exact (hρ t).continuousAt
-
-/-- Observable expectations along a GKLS trajectory are continuous. -/
-theorem continuous_realTracePair_trajectory {ι : Type*} [Fintype ι]
-    {G O : QMatrix d} {J : ι → QMatrix d} {ρ : ℝ → QMatrix d}
-    (hρ : IsGKLSTrajectory G J ρ) :
-    Continuous (fun t => realTracePair O (ρ t)) := by
-  have hcomp := (realTracePairCLM O).continuous.comp hρ.continuous
-  simpa using hcomp
+  simp [realTracePair, complexTracePair, Matrix.smul_mul, Complex.real_smul]
 
 /-- The operator coercivity inequality `κ P ≤ K` implies the pointwise scalar inequality
 `κ Tr(Pρ) ≤ Tr(Kρ)` for every positive state. -/
@@ -75,7 +59,7 @@ theorem energy_hasDerivAt_of_adjoint_eq_neg
       (-realTracePair K (ρ t)) t := by
   have h := realTracePair_hasDerivAt htraj H t
   rw [hH] at h
-  simpa [realTracePair] using h
+  simpa [realTracePair, complexTracePair] using h
 
 /-- Fundamental-theorem-of-calculus form of the energy budget. -/
 theorem dissipation_integral_eq_energy_drop
@@ -96,17 +80,13 @@ theorem dissipation_integral_eq_energy_drop
     (f' := fun s => -realTracePair K (ρ s))
     (fun s _hs => energy_hasDerivAt_of_adjoint_eq_neg htraj hH s)
     hDint
-  have hneg :
-      (∫ s in a..b, -realTracePair K (ρ s)) =
-        -(∫ s in a..b, realTracePair K (ρ s)) := by
-    exact intervalIntegral.integral_neg
-  rw [hneg] at hFTC
+  rw [intervalIntegral.integral_neg] at hFTC
   linarith
 
 /-- Dynamical version of the paper's `1/t` convergence theorem.
 
 Unlike `gapFree_one_over_t`, this theorem does not assume that `q` is antitone, does not assume
-pointwise scalar coercivity, and does not assume an integrated dissipation budget.  These are all
+pointwise scalar coercivity, and does not assume an integrated dissipation budget. These are all
 derived from the GKLS ODE and operator inequalities. -/
 theorem gapFree_one_over_t_of_gkls
     {ι : Type*} [Fintype ι]
@@ -127,8 +107,8 @@ theorem gapFree_one_over_t_of_gkls
   have hq_nonneg : ∀ s ∈ Icc (0 : ℝ) t, 0 ≤ q s := by
     intro s hs
     exact realTracePair_nonneg_of_posSemidef hP (hpos s)
-  have hq_anti : Antitone q := by
-    exact antitone_realTracePair_of_adjoint_nonpos htraj hpos hPadj
+  have hq_anti : Antitone q :=
+    antitone_realTracePair_of_adjoint_nonpos htraj hpos hPadj
   have hq_cont : Continuous q := continuous_realTracePair_trajectory htraj
   have hD_cont : Continuous D := continuous_realTracePair_trajectory htraj
   have hq_int : IntervalIntegrable q MeasureTheory.volume 0 t :=
