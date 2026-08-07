@@ -35,3 +35,4 @@ import FTDQE.GapFreeLindbladKernelGram
 import FTDQE.GapFreeLindbladCauchyPSD
 import FTDQE.GapFreeLindbladM1
 import FTDQE.GapFreeLindbladNearDegeneracy
+import FTDQE.GapFreeLindbladVandermonde
