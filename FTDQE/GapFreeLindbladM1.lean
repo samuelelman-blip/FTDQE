@@ -31,6 +31,9 @@ theorem m1DriftKernel_eq_smul_cauchy
       ((2 * ε^2 : ℝ) : ℂ) • cauchyFrequencyMatrix ω := by
   ext i j
   simp [m1DriftKernel, cauchyFrequencyMatrix, Matrix.smul_apply, div_eq_mul_inv]
+  have hden :
+      -(ω j : ℂ) - (ω i : ℂ) = -((ω j : ℂ) + (ω i : ℂ)) := by ring
+  rw [hden, inv_neg]
   ring
 
 theorem m1DriftKernel_posSemidef
