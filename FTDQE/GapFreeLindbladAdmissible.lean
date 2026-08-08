@@ -1,4 +1,5 @@
 import FTDQE.GapFreeLindbladAbstractLyapunov
+import FTDQE.GapFreeLindbladLaplacePSD
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
@@ -237,14 +238,39 @@ theorem admissible_kernel_drift_coeff
   simp only [admissibleKernelMatrix, admissibleDriftKernelMatrix]
   exact_mod_cast hreal
 
-/-- The arbitrary admissible-weight drift matrix is positive semidefinite.
-The next proof is the finite-dimensional Gram identity for the constant boundary term plus
-the derivative-weighted Laplace integral. -/
+/-- The arbitrary admissible-weight drift matrix is positive semidefinite. -/
 theorem admissibleDriftKernelMatrix_posSemidef
     {ε : ℝ} {m : ℝ → ℝ} {ω : ι → ℝ}
     (hm : AdmissibleWeightData ε m) (hdown : ∀ i, ω i ≤ -ε) :
     (admissibleDriftKernelMatrix m ω).PosSemidef := by
-  sorry
+  classical
+  let B : Matrix ι ι ℂ := fun _ _ => ((m 0 / 2 : ℝ) : ℂ)
+  have hones : (fun _ _ : ι => (1 : ℂ)).PosSemidef := by
+    apply posSemidef_of_gram_entries (fun _ _ : ι => (1 : ℂ)) (fun _ : ι => (1 : ℂ))
+    intro i j
+    simp
+  have hmhalf : 0 ≤ m 0 / 2 := div_nonneg (hm.nonneg 0 le_rfl) (by norm_num)
+  have hB : B.PosSemidef := by
+    have hs := hones.smul hmhalf
+    simpa [B, Complex.real_smul] using hs
+  have hLap : (laplaceGramMatrix (deriv m) ω).PosSemidef := by
+    apply laplaceGramMatrix_posSemidef hm.deriv_nonneg
+    intro i j
+    apply admissible_deriv_kernel_integrable hm
+    linarith [hdown i, hdown j]
+  have hhalf : 0 ≤ (1 / 2 : ℝ) := by norm_num
+  have hLapHalf : ((1 / 2 : ℝ) • laplaceGramMatrix (deriv m) ω).PosSemidef :=
+    hLap.smul hhalf
+  have hsum : (B + (1 / 2 : ℝ) • laplaceGramMatrix (deriv m) ω).PosSemidef :=
+    hB.add hLapHalf
+  have heq : admissibleDriftKernelMatrix m ω =
+      B + (1 / 2 : ℝ) • laplaceGramMatrix (deriv m) ω := by
+    ext i j
+    simp [admissibleDriftKernelMatrix, admissibleScalarDriftKernel,
+      laplaceGramMatrix, B, Matrix.smul_apply, Complex.real_smul]
+    ring
+  rw [heq]
+  exact hsum
 
 /-- Exact arbitrary-admissible-weight Lyapunov theorem for one finite Bohr family. -/
 theorem admissibleKernel_correlatedAdjoint_energy
