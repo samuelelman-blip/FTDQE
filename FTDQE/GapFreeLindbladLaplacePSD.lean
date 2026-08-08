@@ -6,7 +6,7 @@ import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 
 A finite kernel of the form
 `Kᵢⱼ = ∫₀∞ w(s) exp((ωᵢ+ωⱼ)s) ds`
-with nonnegative real weight is positive semidefinite.  This is the finite-dimensional
+with nonnegative real weight is positive semidefinite. This is the finite-dimensional
 Gram identity used for arbitrary admissible weights.
 -/
 
@@ -35,20 +35,87 @@ theorem laplaceGramMatrix_posSemidef
   rw [Matrix.posSemidef_iff_dotProduct_mulVec]
   constructor
   · ext i j
-    simp [laplaceGramMatrix, Matrix.conjTranspose_apply, add_comm]
+    have hreal :
+        (∫ s in Ioi (0 : ℝ), w s * Real.exp ((ω j + ω i) * s)) =
+          ∫ s in Ioi (0 : ℝ), w s * Real.exp ((ω i + ω j) * s) := by
+      apply integral_congr_ae
+      filter_upwards with s
+      rw [add_comm (ω j) (ω i)]
+    change star (((∫ s in Ioi (0 : ℝ), w s * Real.exp ((ω j + ω i) * s)) : ℝ) : ℂ) =
+      (((∫ s in Ioi (0 : ℝ), w s * Real.exp ((ω i + ω j) * s)) : ℝ) : ℂ)
+    rw [hreal]
+    simp
   · intro z
     let q : ℝ → ℂ := fun s => ∑ i : ι, z i * (Real.exp (ω i * s) : ℂ)
+    let g : ι → ι → ℝ → ℂ := fun i j s =>
+      star (z i) * ((w s * Real.exp ((ω i + ω j) * s) : ℝ) : ℂ) * z j
     have hentry (i j : ι) :
         laplaceGramMatrix w ω i j =
           ∫ s in Ioi (0 : ℝ),
             ((w s * Real.exp ((ω i + ω j) * s) : ℝ) : ℂ) := by
       rw [laplaceGramMatrix]
       symm
-      exact MeasureTheory.integral_complex_ofReal
-    have hg (i j : ι) : IntegrableOn
-        (fun s => star (z i) *
-          ((w s * Real.exp ((ω i + ω j) * s) : ℝ) : ℂ) * z j) (Ioi 0) := by
-      exact ((hint i j).ofReal.const_mul (star (z i))).mul_const (z j)
+      exact integral_complex_ofReal
+    have hbase (i j : ι) : IntegrableOn
+        (fun s => ((w s * Real.exp ((ω i + ω j) * s) : ℝ) : ℂ)) (Ioi 0) :=
+      (hint i j).ofReal
+    have hg (i j : ι) : IntegrableOn (g i j) (Ioi 0) := by
+      exact ((hbase i j).const_mul (star (z i))).mul_const (z j)
+    have hconst (i j : ι) :
+        star (z i) * laplaceGramMatrix w ω i j * z j =
+          ∫ s in Ioi (0 : ℝ), g i j s := by
+      rw [hentry]
+      calc
+        star (z i) *
+            (∫ s in Ioi (0 : ℝ),
+              ((w s * Real.exp ((ω i + ω j) * s) : ℝ) : ℂ)) * z j =
+          (∫ s in Ioi (0 : ℝ),
+            star (z i) * ((w s * Real.exp ((ω i + ω j) * s) : ℝ) : ℂ)) * z j := by
+              rw [integral_const_mul_of_integrable (hbase i j)]
+        _ = ∫ s in Ioi (0 : ℝ),
+            (star (z i) * ((w s * Real.exp ((ω i + ω j) * s) : ℝ) : ℂ)) * z j := by
+              rw [integral_mul_const_of_integrable ((hbase i j).const_mul (star (z i)))]
+        _ = ∫ s in Ioi (0 : ℝ), g i j s := by rfl
+    have hinner (i : ι) :
+        (∑ j : ι, ∫ s in Ioi (0 : ℝ), g i j s) =
+          ∫ s in Ioi (0 : ℝ), ∑ j : ι, g i j s := by
+      symm
+      exact integral_finsetSum Finset.univ (fun j _ => hg i j)
+    have houter (i : ι) : IntegrableOn
+        (fun s => ∑ j : ι, g i j s) (Ioi 0) :=
+      integrable_finsetSum Finset.univ (fun j _ => hg i j)
+    have hsums :
+        (∑ i : ι, ∑ j : ι, ∫ s in Ioi (0 : ℝ), g i j s) =
+          ∫ s in Ioi (0 : ℝ), ∑ i : ι, ∑ j : ι, g i j s := by
+      calc
+        (∑ i : ι, ∑ j : ι, ∫ s in Ioi (0 : ℝ), g i j s) =
+            ∑ i : ι, ∫ s in Ioi (0 : ℝ), ∑ j : ι, g i j s := by
+              apply Finset.sum_congr rfl
+              intro i hi
+              exact hinner i
+        _ = ∫ s in Ioi (0 : ℝ), ∑ i : ι, ∑ j : ι, g i j s := by
+              symm
+              exact integral_finsetSum Finset.univ (fun i _ => houter i)
+    have hpoint (s : ℝ) :
+        (∑ i : ι, ∑ j : ι, g i j s) = star (q s) * (w s : ℂ) * q s := by
+      have hexp (i j : ι) :
+          ((Real.exp ((ω i + ω j) * s) : ℝ) : ℂ) =
+            (Real.exp (ω i * s) : ℂ) * (Real.exp (ω j * s) : ℂ) := by
+        norm_cast
+        rw [← Real.exp_add]
+        congr 1
+        ring
+      simp only [g, q]
+      simp_rw [Complex.ofReal_mul, hexp]
+      simp only [map_sum, star_mul]
+      simp
+      rw [Finset.sum_mul]
+      apply Finset.sum_congr rfl
+      intro i hi
+      rw [Finset.mul_sum]
+      apply Finset.sum_congr rfl
+      intro j hj
+      ring
     have hquad :
         star z ⬝ᵥ (laplaceGramMatrix w ω *ᵥ z) =
           ∫ s in Ioi (0 : ℝ), star (q s) * (w s : ℂ) * q s := by
@@ -56,45 +123,23 @@ theorem laplaceGramMatrix_posSemidef
         star z ⬝ᵥ (laplaceGramMatrix w ω *ᵥ z) =
             ∑ i : ι, ∑ j : ι,
               star (z i) * laplaceGramMatrix w ω i j * z j := by
-                simp [Matrix.dotProduct, Matrix.mulVec, Finset.mul_sum, mul_assoc]
-        _ = ∑ i : ι, ∑ j : ι,
-            ∫ s in Ioi (0 : ℝ),
-              star (z i) *
-                ((w s * Real.exp ((ω i + ω j) * s) : ℝ) : ℂ) * z j := by
+                simp [dotProduct, Matrix.mulVec, Finset.mul_sum, mul_assoc]
+        _ = ∑ i : ι, ∑ j : ι, ∫ s in Ioi (0 : ℝ), g i j s := by
               apply Finset.sum_congr rfl
               intro i hi
               apply Finset.sum_congr rfl
               intro j hj
-              rw [hentry]
-              rw [MeasureTheory.integral_const_mul, MeasureTheory.integral_mul_const]
-        _ = ∫ s in Ioi (0 : ℝ),
-            ∑ i : ι, ∑ j : ι,
-              star (z i) *
-                ((w s * Real.exp ((ω i + ω j) * s) : ℝ) : ℂ) * z j := by
-              rw [MeasureTheory.integral_finsetSum]
-              · intro i hi
-                rw [MeasureTheory.integral_finsetSum]
-                intro j hj
-                exact hg i j
-              · intro i hi
-                exact Integrable.finset_sum _ fun j hj => hg i j
+              exact hconst i j
+        _ = ∫ s in Ioi (0 : ℝ), ∑ i : ι, ∑ j : ι, g i j s := hsums
         _ = ∫ s in Ioi (0 : ℝ), star (q s) * (w s : ℂ) * q s := by
-              apply MeasureTheory.integral_congr_ae
+              apply integral_congr_ae
               filter_upwards with s
-              simp only [q, map_sum, star_mul, star_ofReal, Finset.mul_sum, Finset.sum_mul]
-              rw [Finset.sum_comm]
-              apply Finset.sum_congr rfl
-              intro i hi
-              apply Finset.sum_congr rfl
-              intro j hj
-              rw [← Complex.ofReal_mul, ← Complex.ofReal_mul, ← Real.exp_add]
-              congr 2
-              ring
+              exact hpoint s
     rw [hquad]
-    apply MeasureTheory.integral_nonneg_of_ae
+    apply integral_nonneg_of_ae
     filter_upwards [hw] with s hs
     have hsc : (0 : ℂ) ≤ (w s : ℂ) := by exact_mod_cast hs
-    exact star_left_conjugate_nonneg hsc
+    exact star_left_conjugate_nonneg hsc (q s)
 
 end
 
