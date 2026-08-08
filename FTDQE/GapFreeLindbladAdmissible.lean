@@ -25,12 +25,7 @@ noncomputable section
 variable {d : ℕ}
 variable {ι : Type*} [Fintype ι]
 
-/-- Analytic data carried by an admissible weight on `[0,∞)`.
-
-`boundary_decay` and `deriv_integrable` are consequences of the manuscript's
-single weighted-integrability hypothesis together with monotonicity/local absolute
-continuity. They are kept as named fields temporarily so the improper integration-by-parts
-layer can be compiled independently of the tail lemma. -/
+/-- Analytic data used internally by the improper integration-by-parts layer. -/
 structure AdmissibleWeightData (ε : ℝ) (m : ℝ → ℝ) : Prop where
   eps_pos : 0 < ε
   nonneg : ∀ s, 0 ≤ s → 0 ≤ m s
@@ -146,11 +141,7 @@ private theorem deriv_exp_mul (lam x : ℝ) :
   have h := (((hasDerivAt_id x).const_mul lam).exp).deriv
   simpa [mul_comm] using h
 
-/-- Scalar integration by parts for an arbitrary admissible weight.
-
-For `lam ≤ -2 ε`,
-`- C_m(lam) lam/2 = (m(0)+∫m'(s)e^{lam s}ds)/2`.
--/
+/-- Scalar integration by parts for an arbitrary admissible weight. -/
 theorem admissible_scalar_drift_identity
     {ε lam : ℝ} {m : ℝ → ℝ}
     (hm : AdmissibleWeightData ε m) (hlam : lam ≤ -2 * ε) :
@@ -244,16 +235,16 @@ theorem admissibleDriftKernelMatrix_posSemidef
     (hm : AdmissibleWeightData ε m) (hdown : ∀ i, ω i ≤ -ε) :
     (admissibleDriftKernelMatrix m ω).PosSemidef := by
   classical
-  let B : Matrix ι ι ℂ := fun _ _ => ((m 0 / 2 : ℝ) : ℂ)
   let Ones : Matrix ι ι ℂ := fun _ _ => (1 : ℂ)
+  let B : Matrix ι ι ℂ := (m 0 / 2 : ℝ) • Ones
   have hones : Ones.PosSemidef := by
     apply posSemidef_of_gram_entries Ones (fun _ : ι => (1 : ℂ))
     intro i j
     simp [Ones]
   have hmhalf : 0 ≤ m 0 / 2 := div_nonneg (hm.nonneg 0 le_rfl) (by norm_num)
   have hB : B.PosSemidef := by
-    have hs := hones.smul hmhalf
-    simpa [B, Ones, Complex.real_smul] using hs
+    dsimp [B]
+    exact hones.smul hmhalf
   have hLap : (laplaceGramMatrix (deriv m) ω).PosSemidef := by
     apply laplaceGramMatrix_posSemidef hm.deriv_nonneg
     intro i j
@@ -268,7 +259,7 @@ theorem admissibleDriftKernelMatrix_posSemidef
       B + (1 / 2 : ℝ) • laplaceGramMatrix (deriv m) ω := by
     ext i j
     simp [admissibleDriftKernelMatrix, admissibleScalarDriftKernel,
-      laplaceGramMatrix, B, Matrix.smul_apply, Complex.real_smul]
+      laplaceGramMatrix, B, Ones, Matrix.smul_apply, Complex.real_smul]
     ring
   rw [heq]
   exact hsum
