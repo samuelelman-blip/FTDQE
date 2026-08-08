@@ -58,7 +58,8 @@ theorem AdmissibleWeight.deriv_integrable
               rw [intervalIntegral.integral_const_mul]
     rw [hleft] at hip
     simp only [g] at hip ⊢
-    nlinarith [hip]
+    simp at hip
+    linarith
   have hpartial_f : Tendsto
       (fun T => ∫ s in (0 : ℝ)..T, f s) atTop
       (𝓝 (∫ s in Ioi (0 : ℝ), f s)) := by
@@ -95,11 +96,14 @@ theorem AdmissibleWeight.deriv_integrable
       (∫ s in (0 : ℝ)..T, ‖g s‖) = ∫ s in (0 : ℝ)..T, g s := by
     filter_upwards [eventually_ge_atTop (0 : ℝ)] with T hT
     rw [intervalIntegral.integral_of_le hT, intervalIntegral.integral_of_le hT]
-    apply MeasureTheory.integral_congr_ae
-    rw [MeasureTheory.ae_restrict_iff' measurableSet_Ioc]
-    filter_upwards [hg_global] with s hs
-    intro hsI
-    rw [Real.norm_eq_abs, abs_of_nonneg (hs hsI.1)]
+    have hg_nonneg : ∀ᵐ s ∂(volume.restrict (Ioc (0 : ℝ) T)), 0 ≤ g s := by
+      rw [MeasureTheory.ae_restrict_iff' measurableSet_Ioc]
+      filter_upwards [hg_global] with s hs
+      intro hsI
+      exact hs hsI.1
+    exact MeasureTheory.integral_congr_ae
+      (hg_nonneg.mono fun s hs => by
+        rw [Real.norm_eq_abs, abs_of_nonneg hs])
   have hnorm : Tendsto
       (fun T => ∫ s in (0 : ℝ)..T, ‖g s‖) atTop (𝓝 R) := by
     exact hpartial_g.congr' (hnorm_event.mono fun T hT => hT.symm)
@@ -114,8 +118,9 @@ theorem AdmissibleWeight.deriv_integrable
     · have hTle : T ≤ 0 := le_of_not_ge hT
       have hempty : Ioc (0 : ℝ) T = ∅ := by
         ext x
-        simp
-        linarith
+        simp only [mem_Ioc, mem_empty_iff_false, iff_false]
+        intro hx
+        linarith [hx.1, hx.2, hTle]
       rw [hempty]
       exact integrableOn_empty
   exact integrableOn_Ioi_of_intervalIntegral_norm_tendsto
