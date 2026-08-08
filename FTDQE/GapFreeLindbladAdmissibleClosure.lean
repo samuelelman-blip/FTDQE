@@ -38,13 +38,18 @@ theorem AdmissibleWeight.monotoneOn_Ici
     have h := hm.deriv_nonneg
     rw [MeasureTheory.ae_restrict_iff' measurableSet_Ioi] at h
     exact h
-  have hder_xy : ∀ᵐ s ∂(volume.restrict (Ioc x y)), 0 ≤ deriv m s := by
+  have hder_ioc : ∀ᵐ s ∂(volume.restrict (Ioc x y)), 0 ≤ deriv m s := by
     rw [MeasureTheory.ae_restrict_iff' measurableSet_Ioc]
     filter_upwards [hder_global] with s hs
     intro hsxy
     exact hs (lt_of_le_of_lt hx hsxy.1)
+  have hrestr : volume.restrict (Ioc x y) = volume.restrict (Icc x y) :=
+    Measure.restrict_congr_set (Ioc_ae_eq_Icc (α := ℝ) (μ := volume))
+  have hder_icc : ∀ᵐ s ∂(volume.restrict (Icc x y)), 0 ≤ deriv m s := by
+    rw [← hrestr]
+    exact hder_ioc
   have hint_nonneg : 0 ≤ ∫ s in x..y, deriv m s := by
-    exact intervalIntegral.integral_nonneg_of_ae_restrict hxy hder_xy
+    exact intervalIntegral.integral_nonneg_of_ae_restrict hxy hder_icc
   rw [hAC.integral_deriv_eq_sub] at hint_nonneg
   linarith
 
