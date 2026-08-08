@@ -59,6 +59,8 @@ theorem AdmissibleWeight.deriv_integrable
     rw [hleft] at hip
     simp only [g] at hip ⊢
     simp at hip
+    have hargT : -(2 * ε * T) = -2 * ε * T := by ring
+    rw [hargT] at hip
     linarith
   have hpartial_f : Tendsto
       (fun T => ∫ s in (0 : ℝ)..T, f s) atTop
@@ -103,7 +105,8 @@ theorem AdmissibleWeight.deriv_integrable
       exact hs hsI.1
     exact MeasureTheory.integral_congr_ae
       (hg_nonneg.mono fun s hs => by
-        rw [Real.norm_eq_abs, abs_of_nonneg hs])
+        change |g s| = g s
+        exact abs_of_nonneg hs)
   have hnorm : Tendsto
       (fun T => ∫ s in (0 : ℝ)..T, ‖g s‖) atTop (𝓝 R) := by
     exact hpartial_g.congr' (hnorm_event.mono fun T hT => hT.symm)
