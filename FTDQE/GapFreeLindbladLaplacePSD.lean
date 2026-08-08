@@ -41,8 +41,24 @@ theorem laplaceGramMatrix_posSemidef
       apply integral_congr_ae
       filter_upwards with s
       rw [add_comm (ω j) (ω i)]
+    have hcastji :
+        (∫ s in Ioi (0 : ℝ),
+          ((w s * Real.exp ((ω j + ω i) * s) : ℝ) : ℂ)) =
+          ((∫ s in Ioi (0 : ℝ), w s * Real.exp ((ω j + ω i) * s)) : ℂ) := by
+      simpa only [Complex.ofReal_mul] using
+        (integral_complex_ofReal
+          (μ := volume.restrict (Ioi (0 : ℝ)))
+          (f := fun s : ℝ => w s * Real.exp ((ω j + ω i) * s)))
+    have hcastij :
+        (∫ s in Ioi (0 : ℝ),
+          ((w s * Real.exp ((ω i + ω j) * s) : ℝ) : ℂ)) =
+          ((∫ s in Ioi (0 : ℝ), w s * Real.exp ((ω i + ω j) * s)) : ℂ) := by
+      simpa only [Complex.ofReal_mul] using
+        (integral_complex_ofReal
+          (μ := volume.restrict (Ioi (0 : ℝ)))
+          (f := fun s : ℝ => w s * Real.exp ((ω i + ω j) * s)))
     simp only [Matrix.conjTranspose_apply, laplaceGramMatrix]
-    rw [hreal]
+    rw [hcastji, hcastij, hreal]
     simp
   · intro z
     let q : ℝ → ℂ := fun s => ∑ i : ι, z i * (Real.exp (ω i * s) : ℂ)
@@ -115,7 +131,6 @@ theorem laplaceGramMatrix_posSemidef
       rw [Finset.mul_sum]
       apply Finset.sum_congr rfl
       intro j hj
-      simp
       ring
     have hquad :
         star z ⬝ᵥ (laplaceGramMatrix w ω *ᵥ z) =
