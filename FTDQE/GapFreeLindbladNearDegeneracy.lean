@@ -32,13 +32,9 @@ theorem nearDeg_cauchy_det
     apply hΩδ
     linarith
   have hsq : (2 * Ω + δ) ^ 2 ≠ 0 := pow_ne_zero 2 hmid
-  have hQ : Ω * δ * 4 + Ω ^ 2 * 4 + δ ^ 2 ≠ 0 := by
-    intro h
-    apply hsq
-    nlinarith
-  simp [nearDegA, nearDegB, nearDegD]
-  field_simp [hΩ, hΩδ, hmid, h2Ω, h2sum, hsq, hQ]
-  ring_nf
+  unfold nearDegA nearDegB nearDegD
+  field_simp [hΩ, hΩδ, hmid, h2Ω, h2sum, hsq]
+  ring
 
 /-- Including the common factor `2 γ ε²` reproduces the manuscript determinant exactly. -/
 theorem nearDeg_m1_det
@@ -56,7 +52,7 @@ theorem nearDeg_m1_det
   rw [nearDeg_cauchy_det hΩ hΩδ hmid]
   have hsq : (2 * Ω + δ) ^ 2 ≠ 0 := pow_ne_zero 2 hmid
   field_simp [hΩ, hΩδ, hmid, hsq]
-  ring_nf
+  ring
 
 end
 
