@@ -14,7 +14,7 @@ namespace FTDQE
 namespace GapFreeLindblad
 
 open Matrix
-open scoped BigOperators
+open scoped BigOperators ComplexOrder MatrixOrder
 
 noncomputable section
 
