@@ -41,8 +41,7 @@ theorem laplaceGramMatrix_posSemidef
       apply integral_congr_ae
       filter_upwards with s
       rw [add_comm (ω j) (ω i)]
-    change star (((∫ s in Ioi (0 : ℝ), w s * Real.exp ((ω j + ω i) * s)) : ℝ) : ℂ) =
-      (((∫ s in Ioi (0 : ℝ), w s * Real.exp ((ω i + ω j) * s)) : ℝ) : ℂ)
+    simp only [Matrix.conjTranspose_apply, laplaceGramMatrix]
     rw [hreal]
     simp
   · intro z
@@ -54,8 +53,10 @@ theorem laplaceGramMatrix_posSemidef
           ∫ s in Ioi (0 : ℝ),
             ((w s * Real.exp ((ω i + ω j) * s) : ℝ) : ℂ) := by
       rw [laplaceGramMatrix]
-      symm
-      exact integral_complex_ofReal
+      simpa only [Complex.ofReal_mul] using
+        (integral_complex_ofReal
+          (μ := volume.restrict (Ioi (0 : ℝ)))
+          (f := fun s : ℝ => w s * Real.exp ((ω i + ω j) * s))).symm
     have hbase (i j : ι) : IntegrableOn
         (fun s => ((w s * Real.exp ((ω i + ω j) * s) : ℝ) : ℂ)) (Ioi 0) :=
       (hint i j).ofReal
@@ -108,13 +109,13 @@ theorem laplaceGramMatrix_posSemidef
       simp only [g, q]
       simp_rw [Complex.ofReal_mul, hexp]
       simp only [map_sum, star_mul]
-      simp
       rw [Finset.sum_mul]
       apply Finset.sum_congr rfl
       intro i hi
       rw [Finset.mul_sum]
       apply Finset.sum_congr rfl
       intro j hj
+      simp
       ring
     have hquad :
         star z ⬝ᵥ (laplaceGramMatrix w ω *ᵥ z) =
