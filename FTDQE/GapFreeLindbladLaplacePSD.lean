@@ -45,7 +45,7 @@ theorem laplaceGramMatrix_posSemidef
       rw [add_comm (ω j) (ω i)]
     simp only [Matrix.conjTranspose_apply, laplaceGramMatrix]
     rw [hreal]
-    simp [Complex.star_def]
+    simp
   · intro z
     let q : ℝ → ℂ := fun s => ∑ i : ι, z i * (Real.exp (ω i * s) : ℂ)
     let g : ι → ι → ℝ → ℂ := fun i j s =>
@@ -120,6 +120,9 @@ theorem laplaceGramMatrix_posSemidef
           ring
         simp only [g, a, b, hexp, Complex.ofReal_mul]
         ring
+      have hsumw :
+          (∑ i : ι, a i * (w s : ℂ)) = (∑ i : ι, a i) * (w s : ℂ) := by
+        rw [Finset.sum_mul]
       calc
         (∑ i : ι, ∑ j : ι, g i j s) =
             ∑ i : ι, ∑ j : ι, a i * (w s : ℂ) * b j := by
@@ -135,7 +138,7 @@ theorem laplaceGramMatrix_posSemidef
         _ = (∑ i : ι, a i * (w s : ℂ)) * (∑ j : ι, b j) := by
               rw [Finset.sum_mul]
         _ = ((∑ i : ι, a i) * (w s : ℂ)) * (∑ j : ι, b j) := by
-              rw [Finset.sum_mul]
+              rw [hsumw]
         _ = star (q s) * (w s : ℂ) * q s := by
               rw [hstarq, hq]
     have hquad :
