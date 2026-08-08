@@ -42,9 +42,8 @@ theorem finiteDissipativeAdjoint_one_sub
     (J : ι → QMatrix d) (P : QMatrix d) :
     finiteDissipativeAdjoint J ((1 : QMatrix d) - P) =
       -finiteDissipativeAdjoint J P := by
-  rw [finiteDissipativeAdjoint]
-  simp_rw [heisenbergDissipator_sub, heisenbergDissipator_one]
-  simp
+  simp [finiteDissipativeAdjoint, heisenbergDissipator_sub,
+    heisenbergDissipator_one]
 
 /-- Darkness of a positive target implies nonpositive drift of its complement. -/
 theorem complement_drift_nonpos_of_dark
@@ -66,7 +65,7 @@ theorem kernelGramOperator_mul_eq_zero_of_components_dark
   rw [Finset.sum_mul]
   apply Finset.sum_eq_zero
   intro j hj
-  simp [Matrix.smul_mul, Matrix.mul_assoc, hdark]
+  simp [Matrix.mul_assoc, hdark]
 
 /-- For a positive Gram kernel, darkness also gives left annihilation. -/
 theorem mul_kernelGramOperator_eq_zero_of_components_dark
