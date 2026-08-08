@@ -35,30 +35,17 @@ theorem laplaceGramMatrix_posSemidef
   rw [Matrix.posSemidef_iff_dotProduct_mulVec]
   constructor
   · ext i j
+    change star (((∫ s in Ioi (0 : ℝ),
+      w s * Real.exp ((ω j + ω i) * s)) : ℝ) : ℂ) =
+      (((∫ s in Ioi (0 : ℝ),
+        w s * Real.exp ((ω i + ω j) * s)) : ℝ) : ℂ)
     have hreal :
         (∫ s in Ioi (0 : ℝ), w s * Real.exp ((ω j + ω i) * s)) =
           ∫ s in Ioi (0 : ℝ), w s * Real.exp ((ω i + ω j) * s) := by
       apply integral_congr_ae
       filter_upwards with s
       rw [add_comm (ω j) (ω i)]
-    have hcastji :
-        (∫ s in Ioi (0 : ℝ),
-          ((w s * Real.exp ((ω j + ω i) * s) : ℝ) : ℂ)) =
-          ((∫ s in Ioi (0 : ℝ), w s * Real.exp ((ω j + ω i) * s)) : ℂ) := by
-      simpa only [Complex.ofReal_mul] using
-        (integral_complex_ofReal
-          (μ := volume.restrict (Ioi (0 : ℝ)))
-          (f := fun s : ℝ => w s * Real.exp ((ω j + ω i) * s)))
-    have hcastij :
-        (∫ s in Ioi (0 : ℝ),
-          ((w s * Real.exp ((ω i + ω j) * s) : ℝ) : ℂ)) =
-          ((∫ s in Ioi (0 : ℝ), w s * Real.exp ((ω i + ω j) * s)) : ℂ) := by
-      simpa only [Complex.ofReal_mul] using
-        (integral_complex_ofReal
-          (μ := volume.restrict (Ioi (0 : ℝ)))
-          (f := fun s : ℝ => w s * Real.exp ((ω i + ω j) * s)))
-    simp only [Matrix.conjTranspose_apply, laplaceGramMatrix]
-    rw [hcastji, hcastij, hreal]
+    rw [hreal]
     simp
   · intro z
     let q : ℝ → ℂ := fun s => ∑ i : ι, z i * (Real.exp (ω i * s) : ℂ)
@@ -69,10 +56,10 @@ theorem laplaceGramMatrix_posSemidef
           ∫ s in Ioi (0 : ℝ),
             ((w s * Real.exp ((ω i + ω j) * s) : ℝ) : ℂ) := by
       rw [laplaceGramMatrix]
-      simpa only [Complex.ofReal_mul] using
-        (integral_complex_ofReal
-          (μ := volume.restrict (Ioi (0 : ℝ)))
-          (f := fun s : ℝ => w s * Real.exp ((ω i + ω j) * s))).symm
+      exact (integral_ofReal
+        (𝕜 := ℂ)
+        (μ := volume.restrict (Ioi (0 : ℝ)))
+        (f := fun s : ℝ => w s * Real.exp ((ω i + ω j) * s))).symm
     have hbase (i j : ι) : IntegrableOn
         (fun s => ((w s * Real.exp ((ω i + ω j) * s) : ℝ) : ℂ)) (Ioi 0) :=
       (hint i j).ofReal
@@ -139,7 +126,7 @@ theorem laplaceGramMatrix_posSemidef
         star z ⬝ᵥ (laplaceGramMatrix w ω *ᵥ z) =
             ∑ i : ι, ∑ j : ι,
               star (z i) * laplaceGramMatrix w ω i j * z j := by
-                simp [dotProduct, Matrix.mulVec, Finset.mul_sum, mul_assoc]
+                simp only [dotProduct, Matrix.mulVec, Finset.mul_sum, mul_assoc]
         _ = ∑ i : ι, ∑ j : ι, ∫ s in Ioi (0 : ℝ), g i j s := by
               apply Finset.sum_congr rfl
               intro i hi
