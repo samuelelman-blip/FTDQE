@@ -59,16 +59,16 @@ private theorem kernel_factorization
     (m : ℝ → ℝ) (ε lam s : ℝ) :
     m s * Real.exp (lam * s) =
       (m s * Real.exp (-2 * ε * s)) * Real.exp ((lam + 2 * ε) * s) := by
-  rw [← Real.exp_add]
-  congr 1
+  have harg : lam * s = (-2 * ε * s) + ((lam + 2 * ε) * s) := by ring
+  rw [harg, Real.exp_add]
   ring
 
 private theorem deriv_kernel_factorization
     (m : ℝ → ℝ) (ε lam s : ℝ) :
     deriv m s * Real.exp (lam * s) =
       (deriv m s * Real.exp (-2 * ε * s)) * Real.exp ((lam + 2 * ε) * s) := by
-  rw [← Real.exp_add]
-  congr 1
+  have harg : lam * s = (-2 * ε * s) + ((lam + 2 * ε) * s) := by ring
+  rw [harg, Real.exp_add]
   ring
 
 /-- The weighted kernel is integrable for every downward pair `lam ≤ -2 ε`. -/
@@ -80,10 +80,14 @@ theorem admissible_kernel_integrable
   have hratio_meas : AEStronglyMeasurable
       (fun s : ℝ => Real.exp ((lam + 2 * ε) * s)) μ :=
     (Real.continuous_exp.comp (continuous_const.mul continuous_id)).aestronglyMeasurable
+  have hprod : AEStronglyMeasurable
+      (fun s => (m s * Real.exp (-2 * ε * s)) * Real.exp ((lam + 2 * ε) * s)) μ :=
+    hm.weighted_integrable.aestronglyMeasurable.mul hratio_meas
   have htarget_meas : AEStronglyMeasurable
       (fun s => m s * Real.exp (lam * s)) μ := by
-    have hprod := hm.weighted_integrable.aestronglyMeasurable.mul hratio_meas
-    simpa only [μ, kernel_factorization m ε lam] using hprod
+    apply hprod.congr
+    filter_upwards with s
+    exact (kernel_factorization m ε lam s).symm
   change Integrable (fun s => m s * Real.exp (lam * s)) μ
   apply Integrable.mono' hm.weighted_integrable htarget_meas
   filter_upwards [ae_restrict_mem measurableSet_Ioi] with s hs
@@ -103,10 +107,14 @@ theorem admissible_deriv_kernel_integrable
   have hratio_meas : AEStronglyMeasurable
       (fun s : ℝ => Real.exp ((lam + 2 * ε) * s)) μ :=
     (Real.continuous_exp.comp (continuous_const.mul continuous_id)).aestronglyMeasurable
+  have hprod : AEStronglyMeasurable
+      (fun s => (deriv m s * Real.exp (-2 * ε * s)) * Real.exp ((lam + 2 * ε) * s)) μ :=
+    hm.deriv_integrable.aestronglyMeasurable.mul hratio_meas
   have htarget_meas : AEStronglyMeasurable
       (fun s => deriv m s * Real.exp (lam * s)) μ := by
-    have hprod := hm.deriv_integrable.aestronglyMeasurable.mul hratio_meas
-    simpa only [μ, deriv_kernel_factorization m ε lam] using hprod
+    apply hprod.congr
+    filter_upwards with s
+    exact (deriv_kernel_factorization m ε lam s).symm
   change Integrable (fun s => deriv m s * Real.exp (lam * s)) μ
   apply Integrable.mono' hm.deriv_integrable htarget_meas
   filter_upwards [hm.deriv_nonneg, ae_restrict_mem measurableSet_Ioi] with s hder hs
@@ -128,7 +136,7 @@ theorem admissible_boundary_decay
     have hratio : Tendsto (fun s => Real.exp ((lam + 2 * ε) * s)) atTop (𝓝 0) :=
       Real.tendsto_exp_comp_nhds_zero.mpr hlin
     have hprod := hm.boundary_decay.mul hratio
-    simpa only [kernel_factorization m ε lam, zero_mul] using hprod
+    simpa only [← kernel_factorization m ε lam, zero_mul] using hprod
   · rw [heq]
     exact hm.boundary_decay
 
@@ -181,7 +189,7 @@ theorem admissible_scalar_drift_identity
   have hleft : Tendsto
       (fun T => ∫ s in (0 : ℝ)..T, m s * (lam * Real.exp (lam * s))) atTop
       (𝓝 (lam * admissibleScalarKernel m lam)) := by
-    simpa only [hIntegral] using ht
+    simpa only [id_eq, hIntegral] using ht
   have hrightInt : Tendsto
       (fun T => ∫ s in (0 : ℝ)..T, deriv m s * Real.exp (lam * s)) atTop
       (𝓝 (∫ s in Ioi (0 : ℝ), deriv m s * Real.exp (lam * s))) :=
@@ -227,7 +235,6 @@ theorem admissible_kernel_drift_coeff
       - admissibleScalarDriftKernel m (ω i + ω j) := by
     linarith [admissible_scalar_drift_identity hm hsum]
   simp only [admissibleKernelMatrix, admissibleDriftKernelMatrix]
-  push_cast
   exact_mod_cast hreal
 
 /-- The arbitrary admissible-weight drift matrix is positive semidefinite.
