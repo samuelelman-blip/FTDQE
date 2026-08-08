@@ -31,7 +31,10 @@ theorem laplaceGramMatrix_eq_realIntegral
     (w : ℝ → ℝ) (ω : ι → ℝ) (i j : ι) :
     laplaceGramMatrix w ω i j =
       ((∫ s in Ioi (0 : ℝ), w s * Real.exp ((ω i + ω j) * s)) : ℂ) := by
-  exact integral_ofReal (𝕜 := ℂ)
+  exact integral_ofReal
+    (𝕜 := ℂ)
+    (μ := volume.restrict (Ioi (0 : ℝ)))
+    (f := fun s : ℝ => w s * Real.exp ((ω i + ω j) * s))
 
 /-- A Laplace kernel with nonnegative weight is positive semidefinite. -/
 theorem laplaceGramMatrix_posSemidef
@@ -44,15 +47,17 @@ theorem laplaceGramMatrix_posSemidef
   rw [Matrix.posSemidef_iff_dotProduct_mulVec]
   constructor
   · ext i j
+    have hji := laplaceGramMatrix_eq_realIntegral w ω j i
+    have hij := laplaceGramMatrix_eq_realIntegral w ω i j
     have hreal :
         (∫ s in Ioi (0 : ℝ), w s * Real.exp ((ω j + ω i) * s)) =
           ∫ s in Ioi (0 : ℝ), w s * Real.exp ((ω i + ω j) * s) := by
       apply integral_congr_ae
       filter_upwards with s
       rw [add_comm (ω j) (ω i)]
-    simp only [Matrix.conjTranspose_apply, laplaceGramMatrix, ← Complex.ofReal_mul]
-    rw [integral_ofReal (𝕜 := ℂ), integral_ofReal (𝕜 := ℂ), hreal]
-    simp
+    simp only [Matrix.conjTranspose_apply]
+    rw [hji, hij, hreal]
+    simp [Complex.star_def]
   · intro z
     let q : ℝ → ℂ := fun s => ∑ i : ι, z i * (Real.exp (ω i * s) : ℂ)
     let g : ι → ι → ℝ → ℂ := fun i j s =>
@@ -109,14 +114,15 @@ theorem laplaceGramMatrix_posSemidef
       simp only [g, q]
       simp_rw [Complex.ofReal_mul, hexp]
       rw [star_sum]
-      simp_rw [star_mul, star_ofReal]
+      simp_rw [star_mul]
+      simp only [Complex.star_def, Complex.conj_ofReal]
       rw [Finset.sum_mul]
       apply Finset.sum_congr rfl
       intro i hi
       rw [Finset.mul_sum]
       apply Finset.sum_congr rfl
       intro j hj
-      ring_nf
+      ac_rfl
     have hquad :
         star z ⬝ᵥ (laplaceGramMatrix w ω *ᵥ z) =
           ∫ s in Ioi (0 : ℝ), star (q s) * (w s : ℂ) * q s := by
@@ -130,7 +136,7 @@ theorem laplaceGramMatrix_posSemidef
                 rw [Finset.mul_sum]
                 apply Finset.sum_congr rfl
                 intro j hj
-                ring_nf
+                ac_rfl
         _ = ∑ i : ι, ∑ j : ι, ∫ s in Ioi (0 : ℝ), g i j s := by
               apply Finset.sum_congr rfl
               intro i hi
