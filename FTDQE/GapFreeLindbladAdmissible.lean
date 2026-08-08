@@ -245,14 +245,15 @@ theorem admissibleDriftKernelMatrix_posSemidef
     (admissibleDriftKernelMatrix m ω).PosSemidef := by
   classical
   let B : Matrix ι ι ℂ := fun _ _ => ((m 0 / 2 : ℝ) : ℂ)
-  have hones : (fun _ _ : ι => (1 : ℂ)).PosSemidef := by
-    apply posSemidef_of_gram_entries (fun _ _ : ι => (1 : ℂ)) (fun _ : ι => (1 : ℂ))
+  let Ones : Matrix ι ι ℂ := fun _ _ => (1 : ℂ)
+  have hones : Ones.PosSemidef := by
+    apply posSemidef_of_gram_entries Ones (fun _ : ι => (1 : ℂ))
     intro i j
-    simp
+    simp [Ones]
   have hmhalf : 0 ≤ m 0 / 2 := div_nonneg (hm.nonneg 0 le_rfl) (by norm_num)
   have hB : B.PosSemidef := by
     have hs := hones.smul hmhalf
-    simpa [B, Complex.real_smul] using hs
+    simpa [B, Ones, Complex.real_smul] using hs
   have hLap : (laplaceGramMatrix (deriv m) ω).PosSemidef := by
     apply laplaceGramMatrix_posSemidef hm.deriv_nonneg
     intro i j
