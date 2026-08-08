@@ -31,6 +31,10 @@ theorem laplaceGramMatrix_eq_realIntegral
     (w : ℝ → ℝ) (ω : ι → ℝ) (i j : ι) :
     laplaceGramMatrix w ω i j =
       ((∫ s in Ioi (0 : ℝ), w s * Real.exp ((ω i + ω j) * s)) : ℂ) := by
+  unfold laplaceGramMatrix
+  change (∫ s in Ioi (0 : ℝ),
+      ((w s * Real.exp ((ω i + ω j) * s) : ℝ) : ℂ)) =
+    ((∫ s in Ioi (0 : ℝ), w s * Real.exp ((ω i + ω j) * s)) : ℂ)
   exact integral_ofReal
     (𝕜 := ℂ)
     (μ := volume.restrict (Ioi (0 : ℝ)))
@@ -47,8 +51,6 @@ theorem laplaceGramMatrix_posSemidef
   rw [Matrix.posSemidef_iff_dotProduct_mulVec]
   constructor
   · ext i j
-    have hji := laplaceGramMatrix_eq_realIntegral w ω j i
-    have hij := laplaceGramMatrix_eq_realIntegral w ω i j
     have hreal :
         (∫ s in Ioi (0 : ℝ), w s * Real.exp ((ω j + ω i) * s)) =
           ∫ s in Ioi (0 : ℝ), w s * Real.exp ((ω i + ω j) * s) := by
@@ -56,7 +58,7 @@ theorem laplaceGramMatrix_posSemidef
       filter_upwards with s
       rw [add_comm (ω j) (ω i)]
     simp only [Matrix.conjTranspose_apply]
-    rw [hji, hij, hreal]
+    rw [laplaceGramMatrix_eq_realIntegral, laplaceGramMatrix_eq_realIntegral, hreal]
     simp [Complex.star_def]
   · intro z
     let q : ℝ → ℂ := fun s => ∑ i : ι, z i * (Real.exp (ω i * s) : ℂ)
@@ -115,11 +117,10 @@ theorem laplaceGramMatrix_posSemidef
       simp_rw [Complex.ofReal_mul, hexp]
       rw [star_sum]
       simp_rw [star_mul]
-      simp only [Complex.star_def, Complex.conj_ofReal]
-      rw [Finset.sum_mul]
+      simp only [Complex.star_def, Complex.conj_ofReal,
+        Finset.sum_mul, Finset.mul_sum]
       apply Finset.sum_congr rfl
       intro i hi
-      rw [Finset.mul_sum]
       apply Finset.sum_congr rfl
       intro j hj
       ac_rfl
@@ -130,10 +131,9 @@ theorem laplaceGramMatrix_posSemidef
         star z ⬝ᵥ (laplaceGramMatrix w ω *ᵥ z) =
             ∑ i : ι, ∑ j : ι,
               star (z i) * laplaceGramMatrix w ω i j * z j := by
-                simp only [dotProduct, Matrix.mulVec]
+                simp only [dotProduct, Matrix.mulVec, Finset.mul_sum]
                 apply Finset.sum_congr rfl
                 intro i hi
-                rw [Finset.mul_sum]
                 apply Finset.sum_congr rfl
                 intro j hj
                 ac_rfl
