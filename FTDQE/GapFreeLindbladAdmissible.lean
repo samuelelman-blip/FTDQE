@@ -2,6 +2,7 @@ import FTDQE.GapFreeLindbladAbstractLyapunov
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
+import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 
 /-!
 # Arbitrary admissible weights
@@ -9,7 +10,7 @@ import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 This file formalizes the integration-by-parts mechanism for an arbitrary admissible
 weight. The analytic assumptions are stated directly in the form needed by the
 absolutely-continuous integration-by-parts theorem; no differentiability or C^1
-hypothesis is imposed.
+hypothesis is imposed on the weight.
 -/
 
 namespace FTDQE
@@ -27,8 +28,8 @@ variable {ι : Type*} [Fintype ι]
 
 `boundary_decay` and `deriv_integrable` are consequences of the manuscript's
 single weighted-integrability hypothesis together with monotonicity/local absolute
-continuity. They are kept as named fields here so that the improper integration by
-parts theorem can be isolated from that separate tail lemma. -/
+continuity. They are kept as named fields temporarily so the improper integration-by-parts
+layer can be compiled independently of the tail lemma. -/
 structure AdmissibleWeightData (ε : ℝ) (m : ℝ → ℝ) : Prop where
   eps_pos : 0 < ε
   nonneg : ∀ s, 0 ≤ s → 0 ≤ m s
@@ -49,41 +50,71 @@ def admissibleScalarDriftKernel (m : ℝ → ℝ) (lam : ℝ) : ℝ :=
 
 /-- Domination of a more strongly decaying exponential by the threshold exponential. -/
 theorem exp_decay_le_threshold
-    {ε lam s : ℝ} (hε : 0 < ε) (hlam : lam ≤ -2 * ε) (hs : 0 ≤ s) :
+    {ε lam s : ℝ} (_hε : 0 < ε) (hlam : lam ≤ -2 * ε) (hs : 0 ≤ s) :
     Real.exp (lam * s) ≤ Real.exp (-2 * ε * s) := by
   apply Real.exp_le_exp.mpr
   nlinarith
+
+private theorem kernel_factorization
+    (m : ℝ → ℝ) (ε lam s : ℝ) :
+    m s * Real.exp (lam * s) =
+      (m s * Real.exp (-2 * ε * s)) * Real.exp ((lam + 2 * ε) * s) := by
+  rw [← Real.exp_add]
+  congr 1
+  ring
+
+private theorem deriv_kernel_factorization
+    (m : ℝ → ℝ) (ε lam s : ℝ) :
+    deriv m s * Real.exp (lam * s) =
+      (deriv m s * Real.exp (-2 * ε * s)) * Real.exp ((lam + 2 * ε) * s) := by
+  rw [← Real.exp_add]
+  congr 1
+  ring
 
 /-- The weighted kernel is integrable for every downward pair `lam ≤ -2 ε`. -/
 theorem admissible_kernel_integrable
     {ε lam : ℝ} {m : ℝ → ℝ}
     (hm : AdmissibleWeightData ε m) (hlam : lam ≤ -2 * ε) :
     IntegrableOn (fun s => m s * Real.exp (lam * s)) (Ioi 0) := by
-  apply Integrable.mono' hm.weighted_integrable
-  · exact hm.weighted_integrable.aestronglyMeasurable
-  · filter_upwards with s hs
-    have hs0 : 0 ≤ s := hs.le
-    have hm0 := hm.nonneg s hs0
-    have hexp0 : 0 ≤ Real.exp (lam * s) := (Real.exp_pos _).le
-    have hdom := exp_decay_le_threshold hm.eps_pos hlam hs0
-    rw [Real.norm_eq_abs, abs_of_nonneg (mul_nonneg hm0 hexp0), Real.norm_eq_abs,
-      abs_of_nonneg (mul_nonneg hm0 (Real.exp_pos _).le)]
-    exact mul_le_mul_of_nonneg_left hdom hm0
+  let μ := volume.restrict (Ioi (0 : ℝ))
+  have hratio_meas : AEStronglyMeasurable
+      (fun s : ℝ => Real.exp ((lam + 2 * ε) * s)) μ :=
+    (Real.continuous_exp.comp (continuous_const.mul continuous_id)).aestronglyMeasurable
+  have htarget_meas : AEStronglyMeasurable
+      (fun s => m s * Real.exp (lam * s)) μ := by
+    have hprod := hm.weighted_integrable.aestronglyMeasurable.mul hratio_meas
+    simpa only [μ, kernel_factorization m ε lam] using hprod
+  change Integrable (fun s => m s * Real.exp (lam * s)) μ
+  apply Integrable.mono' hm.weighted_integrable htarget_meas
+  filter_upwards [ae_restrict_mem measurableSet_Ioi] with s hs
+  have hs0 : 0 ≤ s := hs.le
+  have hm0 := hm.nonneg s hs0
+  have hexp0 : 0 ≤ Real.exp (lam * s) := (Real.exp_pos _).le
+  have hdom := exp_decay_le_threshold hm.eps_pos hlam hs0
+  rw [Real.norm_eq_abs, abs_of_nonneg (mul_nonneg hm0 hexp0)]
+  exact mul_le_mul_of_nonneg_left hdom hm0
 
 /-- The derivative-weighted kernel is integrable for every downward pair. -/
 theorem admissible_deriv_kernel_integrable
     {ε lam : ℝ} {m : ℝ → ℝ}
     (hm : AdmissibleWeightData ε m) (hlam : lam ≤ -2 * ε) :
     IntegrableOn (fun s => deriv m s * Real.exp (lam * s)) (Ioi 0) := by
-  apply Integrable.mono' hm.deriv_integrable
-  · exact hm.deriv_integrable.aestronglyMeasurable
-  · filter_upwards [hm.deriv_nonneg] with s hs hder
-    have hs0 : 0 ≤ s := hs.le
-    have hexp0 : 0 ≤ Real.exp (lam * s) := (Real.exp_pos _).le
-    have hdom := exp_decay_le_threshold hm.eps_pos hlam hs0
-    rw [Real.norm_eq_abs, abs_of_nonneg (mul_nonneg hder hexp0), Real.norm_eq_abs,
-      abs_of_nonneg (mul_nonneg hder (Real.exp_pos _).le)]
-    exact mul_le_mul_of_nonneg_left hdom hder
+  let μ := volume.restrict (Ioi (0 : ℝ))
+  have hratio_meas : AEStronglyMeasurable
+      (fun s : ℝ => Real.exp ((lam + 2 * ε) * s)) μ :=
+    (Real.continuous_exp.comp (continuous_const.mul continuous_id)).aestronglyMeasurable
+  have htarget_meas : AEStronglyMeasurable
+      (fun s => deriv m s * Real.exp (lam * s)) μ := by
+    have hprod := hm.deriv_integrable.aestronglyMeasurable.mul hratio_meas
+    simpa only [μ, deriv_kernel_factorization m ε lam] using hprod
+  change Integrable (fun s => deriv m s * Real.exp (lam * s)) μ
+  apply Integrable.mono' hm.deriv_integrable htarget_meas
+  filter_upwards [hm.deriv_nonneg, ae_restrict_mem measurableSet_Ioi] with s hder hs
+  have hs0 : 0 ≤ s := hs.le
+  have hexp0 : 0 ≤ Real.exp (lam * s) := (Real.exp_pos _).le
+  have hdom := exp_decay_le_threshold hm.eps_pos hlam hs0
+  rw [Real.norm_eq_abs, abs_of_nonneg (mul_nonneg hder hexp0)]
+  exact mul_le_mul_of_nonneg_left hdom hder
 
 /-- Boundary decay at every exponent `lam ≤ -2 ε`. -/
 theorem admissible_boundary_decay
@@ -92,18 +123,19 @@ theorem admissible_boundary_decay
     Tendsto (fun s => m s * Real.exp (lam * s)) atTop (𝓝 0) := by
   rcases lt_or_eq_of_le hlam with hlt | heq
   · have hneg : lam + 2 * ε < 0 := by linarith
-    have hratio : Tendsto (fun s => Real.exp ((lam + 2 * ε) * s)) atTop (𝓝 0) := by
-      simpa using Real.tendsto_exp_mul_atTop_nhds_zero_of_neg hneg
-    have hrew : (fun s => m s * Real.exp (lam * s)) =
-        (fun s => (m s * Real.exp (-2 * ε * s)) * Real.exp ((lam + 2 * ε) * s)) := by
-      funext s
-      rw [← Real.exp_add]
-      congr 1
-      ring
-    rw [hrew]
-    exact hm.boundary_decay.mul hratio
+    have hlin : Tendsto (fun s : ℝ => (lam + 2 * ε) * s) atTop atBot :=
+      (tendsto_const_mul_atBot_of_neg hneg).2 tendsto_id
+    have hratio : Tendsto (fun s => Real.exp ((lam + 2 * ε) * s)) atTop (𝓝 0) :=
+      Real.tendsto_exp_comp_nhds_zero.mpr hlin
+    have hprod := hm.boundary_decay.mul hratio
+    simpa only [kernel_factorization m ε lam, zero_mul] using hprod
   · rw [heq]
     exact hm.boundary_decay
+
+private theorem deriv_exp_mul (lam x : ℝ) :
+    deriv (fun s : ℝ => Real.exp (lam * s)) x = lam * Real.exp (lam * x) := by
+  have h := (((hasDerivAt_id x).const_mul lam).exp).deriv
+  simpa [mul_comm] using h
 
 /-- Scalar integration by parts for an arbitrary admissible weight.
 
@@ -118,44 +150,38 @@ theorem admissible_scalar_drift_identity
   have hkint := admissible_kernel_integrable hm hlam
   have hdint := admissible_deriv_kernel_integrable hm hlam
   have hbd := admissible_boundary_decay hm hlam
-  have hexpAC (T : ℝ) (hT : 0 ≤ T) :
+  have hexpAC (T : ℝ) (_hT : 0 ≤ T) :
       AbsolutelyContinuousOnInterval (fun s : ℝ => Real.exp (lam * s)) 0 T := by
-    apply (continuous_const.mul continuous_id).exp.absolutelyContinuousOnInterval_of_deriv_le
-      (C := |lam| * Real.exp (|lam| * T))
-    · positivity
-    · intro x hx
-      have hx0 : 0 ≤ x := by simpa [uIcc_of_le hT] using hx.1
-      have hxT : x ≤ T := by simpa [uIcc_of_le hT] using hx.2
-      have hder : deriv (fun s : ℝ => Real.exp (lam * s)) x = lam * Real.exp (lam * x) := by
-        simpa using (Real.hasDerivAt_exp (lam * x)).comp x (hasDerivAt_const x lam).mul_const
-      rw [hder, Real.norm_eq_abs, abs_mul]
-      have he : Real.exp (lam * x) ≤ Real.exp (|lam| * T) := by
-        apply Real.exp_le_exp.mpr
-        have hlamabs : lam ≤ |lam| := le_abs_self lam
-        nlinarith
-      calc
-        |lam| * |Real.exp (lam * x)| = |lam| * Real.exp (lam * x) := by
-          rw [abs_of_pos (Real.exp_pos _)]
-        _ ≤ |lam| * Real.exp (|lam| * T) :=
-          mul_le_mul_of_nonneg_left he (abs_nonneg _)
+    have hlin : ContDiff ℝ 1 (fun s : ℝ => lam * s) := contDiff_const.mul contDiff_id
+    exact hlin.exp.contDiffOn.absolutelyContinuousOnInterval
   have hfinite (T : ℝ) (hT : 0 ≤ T) :
       (∫ s in (0 : ℝ)..T, m s * (lam * Real.exp (lam * s))) =
         m T * Real.exp (lam * T) - m 0 -
           ∫ s in (0 : ℝ)..T, deriv m s * Real.exp (lam * s) := by
     have hip := (hm.localAC T hT).integral_mul_deriv_eq_deriv_mul (hexpAC T hT)
-    simpa [mul_assoc] using hip
-  have hleft : Tendsto
-      (fun T => ∫ s in (0 : ℝ)..T, m s * (lam * Real.exp (lam * s))) atTop
-      (𝓝 (lam * admissibleScalarKernel m lam)) := by
-    have hi : IntegrableOn (fun s => m s * (lam * Real.exp (lam * s))) (Ioi 0) := by
-      simpa [mul_assoc, mul_left_comm, mul_comm] using hkint.const_mul lam
-    have ht := intervalIntegral_tendsto_integral_Ioi
+    rw [show deriv (fun s : ℝ => Real.exp (lam * s)) =
+      fun s => lam * Real.exp (lam * s) from funext (deriv_exp_mul lam)] at hip
+    simpa using hip
+  have hi : IntegrableOn (fun s => m s * (lam * Real.exp (lam * s))) (Ioi 0) := by
+    change Integrable (fun s => m s * (lam * Real.exp (lam * s)))
+      (volume.restrict (Ioi 0))
+    have hconst := hkint.const_mul lam
+    convert hconst using 1
+    funext s
+    ring
+  have ht := intervalIntegral_tendsto_integral_Ioi
       (f := fun s => m s * (lam * Real.exp (lam * s))) 0 hi tendsto_id
-    convert ht using 1
+  have hIntegral :
+      (∫ s in Ioi (0 : ℝ), m s * (lam * Real.exp (lam * s))) =
+        lam * admissibleScalarKernel m lam := by
     rw [admissibleScalarKernel, ← MeasureTheory.integral_const_mul]
     apply MeasureTheory.integral_congr_ae
     filter_upwards with s
     ring
+  have hleft : Tendsto
+      (fun T => ∫ s in (0 : ℝ)..T, m s * (lam * Real.exp (lam * s))) atTop
+      (𝓝 (lam * admissibleScalarKernel m lam)) := by
+    simpa only [hIntegral] using ht
   have hrightInt : Tendsto
       (fun T => ∫ s in (0 : ℝ)..T, deriv m s * Real.exp (lam * s)) atTop
       (𝓝 (∫ s in Ioi (0 : ℝ), deriv m s * Real.exp (lam * s))) :=
@@ -197,11 +223,16 @@ theorem admissible_kernel_drift_coeff
         - admissibleDriftKernelMatrix m ω i j := by
   intro i j
   have hsum : ω i + ω j ≤ -2 * ε := by linarith [hdown i, hdown j]
-  have h := admissible_scalar_drift_identity hm hsum
-  exact_mod_cast h
+  have hreal : admissibleScalarKernel m (ω i + ω j) * ((ω i + ω j) / 2) =
+      - admissibleScalarDriftKernel m (ω i + ω j) := by
+    linarith [admissible_scalar_drift_identity hm hsum]
+  simp only [admissibleKernelMatrix, admissibleDriftKernelMatrix]
+  push_cast
+  exact_mod_cast hreal
 
 /-- The arbitrary admissible-weight drift matrix is positive semidefinite.
-The proof obligation is isolated here while the scalar integration-by-parts layer is checked. -/
+The next proof is the finite-dimensional Gram identity for the constant boundary term plus
+the derivative-weighted Laplace integral. -/
 theorem admissibleDriftKernelMatrix_posSemidef
     {ε : ℝ} {m : ℝ → ℝ} {ω : ι → ℝ}
     (hm : AdmissibleWeightData ε m) (hdown : ∀ i, ω i ≤ -ε) :
