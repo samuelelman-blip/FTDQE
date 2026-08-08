@@ -1,5 +1,6 @@
 import FTDQE.GapFreeLindbladKernelGram
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
+import Mathlib.Algebra.Star.BigOperators
 
 /-!
 # Positive Laplace Gram kernels
@@ -30,7 +31,7 @@ theorem laplaceGramMatrix_eq_realIntegral
     (w : ℝ → ℝ) (ω : ι → ℝ) (i j : ι) :
     laplaceGramMatrix w ω i j =
       ((∫ s in Ioi (0 : ℝ), w s * Real.exp ((ω i + ω j) * s)) : ℂ) := by
-  exact integral_ofReal
+  exact integral_ofReal (𝕜 := ℂ)
 
 /-- A Laplace kernel with nonnegative weight is positive semidefinite. -/
 theorem laplaceGramMatrix_posSemidef
@@ -49,10 +50,8 @@ theorem laplaceGramMatrix_posSemidef
       apply integral_congr_ae
       filter_upwards with s
       rw [add_comm (ω j) (ω i)]
-    have hji := laplaceGramMatrix_eq_realIntegral w ω j i
-    have hij := laplaceGramMatrix_eq_realIntegral w ω i j
-    simp only [Matrix.conjTranspose_apply]
-    rw [hji, hij, hreal]
+    simp only [Matrix.conjTranspose_apply, laplaceGramMatrix, ← Complex.ofReal_mul]
+    rw [integral_ofReal (𝕜 := ℂ), integral_ofReal (𝕜 := ℂ), hreal]
     simp
   · intro z
     let q : ℝ → ℂ := fun s => ∑ i : ι, z i * (Real.exp (ω i * s) : ℂ)
@@ -109,14 +108,15 @@ theorem laplaceGramMatrix_posSemidef
         ring
       simp only [g, q]
       simp_rw [Complex.ofReal_mul, hexp]
-      simp only [map_sum, star_mul]
+      rw [star_sum]
+      simp_rw [star_mul, star_ofReal]
       rw [Finset.sum_mul]
       apply Finset.sum_congr rfl
       intro i hi
       rw [Finset.mul_sum]
       apply Finset.sum_congr rfl
       intro j hj
-      ring
+      ring_nf
     have hquad :
         star z ⬝ᵥ (laplaceGramMatrix w ω *ᵥ z) =
           ∫ s in Ioi (0 : ℝ), star (q s) * (w s : ℂ) * q s := by
@@ -130,7 +130,7 @@ theorem laplaceGramMatrix_posSemidef
                 rw [Finset.mul_sum]
                 apply Finset.sum_congr rfl
                 intro j hj
-                ring
+                ring_nf
         _ = ∑ i : ι, ∑ j : ι, ∫ s in Ioi (0 : ℝ), g i j s := by
               apply Finset.sum_congr rfl
               intro i hi
