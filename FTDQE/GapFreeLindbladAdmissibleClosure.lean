@@ -88,7 +88,7 @@ theorem AdmissibleWeight.boundary_decay
       have hexple : Real.exp (-2 * ε * (T + 1)) ≤ Real.exp (-2 * ε * s) := by
         apply Real.exp_le_exp.mpr
         nlinarith [hm.eps_pos, hs.2]
-      exact mul_le_mul hmle hexple (Real.exp_pos _).le (hm.nonneg T hT)
+      exact mul_le_mul hmle hexple (Real.exp_pos _).le (hm.nonneg s hs0)
     have hlowInt :
         (∫ s in T..T + 1, c T) ≤ ∫ s in T..T + 1, f s := by
       exact intervalIntegral.integral_mono_on hT1 hcint hint hpoint
@@ -112,9 +112,14 @@ theorem AdmissibleWeight.boundary_decay
   have hid : (fun T => Real.exp (2 * ε) * c T) = f := by
     funext T
     simp only [c, f]
-    rw [← Real.exp_add]
-    congr 1
-    ring
+    calc
+      Real.exp (2 * ε) * (m T * Real.exp (-2 * ε * (T + 1))) =
+          m T * (Real.exp (2 * ε) * Real.exp (-2 * ε * (T + 1))) := by ring
+      _ = m T * Real.exp (2 * ε + (-2 * ε * (T + 1))) := by
+          rw [Real.exp_add]
+      _ = m T * Real.exp (-2 * ε * T) := by
+          congr 2
+          ring
   rw [hid] at hscaled
   exact hscaled
 
