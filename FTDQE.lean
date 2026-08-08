@@ -27,6 +27,7 @@ import FTDQE.GapFreeLindblad
 import FTDQE.GapFreeLindbladDarkness
 import FTDQE.GapFreeLindbladLyapunov
 import FTDQE.GapFreeLindbladGKLS
+import FTDQE.GapFreeLindbladGKLSAdjoint
 import FTDQE.GapFreeLindbladConvergence
 import FTDQE.GapFreeLindbladSpectral
 import FTDQE.GapFreeLindbladAbstractLyapunov
