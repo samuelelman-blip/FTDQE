@@ -1,0 +1,9 @@
+cff-version: 1.2.0
+message: "Please cite this version when using these numerical records."
+title: "FTDQE numerical release accompanying the manuscript"
+authors:
+  - family-names: Elman
+    given-names: S. J.
+version: numerical-2026-09-11
+date-released: 2026-09-11
+url: "https://github.com/samuelelman-blip/FTDQE/releases/tag/numerical-2026-09-11"

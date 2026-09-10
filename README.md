@@ -49,3 +49,8 @@ lake build
 ```
 
 See `docs/formalisation-plan.md` for the theorem dependency graph and precise infrastructure boundaries.
+
+
+## Numerical release
+
+The manuscript and numerical records are available in [release numerical-2026-09-11](https://github.com/samuelelman-blip/FTDQE/releases/tag/numerical-2026-09-11). The [release index](numerical/2026-09-11/README.md) identifies the coefficients, Hamiltonians, codeword maps, radii, solver records and trajectories behind each table and figure.
