@@ -1,0 +1,20 @@
+{
+  "version": "numerical-2026-09-11",
+  "scope": "Packaging and file identity; numerical validation remains in the separate release records.",
+  "source_archive": "FTDQE_numerical_2026-09-11.zip",
+  "source_sha256_before_and_after": "38ac5821e798bcf59f748411ff37f3833e71f53c6c16ff84c0430789cf709d6e",
+  "part_count": 10,
+  "entry_count": 869,
+  "manifest_file_count": 868,
+  "checks": {
+    "all_parts_pass_zip_crc": true,
+    "parts_have_disjoint_entries": true,
+    "union_equals_original_archive": true,
+    "every_entry_byte_equal_to_original": true,
+    "all_manifest_sizes_match": true,
+    "all_manifest_sha256_match": true,
+    "source_archive_unchanged": true
+  },
+  "asset_index": "FTDQE_numerical_parts.json",
+  "asset_checksums": "FTDQE_numerical_parts_SHA256SUMS.txt"
+}
